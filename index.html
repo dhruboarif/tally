@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tally — বাকিখাতা | Dhrubo Computers</title>
+    <meta name="description" content="Dhrubo Computers-এর বাকিখাতা অ্যাপ। কাস্টমারের বাকি হিসাব রাখুন সহজে।">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366F1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tally">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+    <!-- ===================== APP SHELL ===================== -->
+    <div id="app" class="app-shell">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo"><i class="ph-bold ph-chart-line-up"></i></div>
+                <span class="brand-name">Dhrubo Computers</span>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn"><i class="ph ph-x"></i></button>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <i class="ph ph-hand-coins"></i><span data-i18n="nav_dashboard">Baki Khata</span>
+                </a>
+                <a href="#ledger" class="nav-item" data-page="ledger">
+                    <i class="ph ph-book-open"></i><span data-i18n="nav_ledger">Ledger</span>
+                </a>
+                <a href="#reports" class="nav-item" data-page="reports">
+                    <i class="ph ph-chart-line-up"></i><span data-i18n="nav_reports">Reports</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-avatar-sm">T</div>
+                    <div class="user-meta">
+                        <strong data-i18n="user_shop_name">Tally Shop</strong>
+                        <small>Premium Plan</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-area">
+            <!-- TOP HEADER BAR -->
+            <header class="topbar">
+                <button class="hamburger" id="hamburgerBtn"><i class="ph ph-list"></i></button>
+                <div class="topbar-search">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="globalSearch" placeholder="Search anything..."
+                        data-i18n-placeholder="search_placeholder">
+                </div>
+                <div class="topbar-actions">
+                    <button class="topbar-icon-btn" id="langToggleBtn" title="Toggle Language"><span
+                            class="lang-label">EN</span></button>
+                    <button class="topbar-icon-btn" id="themeToggleBtn" title="Toggle Theme"><i
+                            class="ph ph-moon"></i></button>
+                    <button class="topbar-icon-btn notif-btn" id="notifBtn" title="Notifications">
+                        <i class="ph ph-bell"></i><span class="notif-badge" id="notifBadge">2</span>
+                    </button>
+                    <span id="syncStatus" title="Cloud Sync"
+                        style="font-size:0.7rem; display:flex; align-items:center; gap:3px; opacity:0.7;">
+                        <i class="ph ph-cloud" style="font-size:1.1rem;"></i>
+                    </span>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE PAGE CONTENT -->
+            <div class="page-scroll">
+
+                <!-- ===== DASHBOARD (CUSTOMER LIST) ===== -->
+                <section class="page active" id="page-dashboard">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_customers">Customers List</h1>
+                            <p class="page-subtitle" data-i18n="dashboard_subtitle_simple">Manage your customer dues
+                                easily.</p>
+                        </div>
+                        <button class="btn btn-primary" id="newTxBtnTop"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_new_entry">New Entry</span></button>
+                    </div>
+
+                    <div class="search-box-large">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="customerSearchMain" placeholder="Search customer name..."
+                            data-i18n-placeholder="search_placeholder">
+                    </div>
+
+                    <div class="customer-grid-container">
+                        <div id="dashboardCustomerList" class="entity-list">
+                            <!-- Customers will be injected here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== CUSTOMERS PAGE ===== -->
+                <section class="page" id="page-customers">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_customers">Customers</h1>
+                            <p class="page-subtitle" data-i18n="customers_subtitle">Manage your customers and their
+                                dues.</p>
+                        </div>
+                        <button class="btn btn-primary" id="addCustomerBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_add_customer">Add Customer</span></button>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="search-inline"><i class="ph ph-magnifying-glass"></i><input type="text"
+                                id="customerSearch" placeholder="Search customers..."
+                                data-i18n-placeholder="search_customers"></div>
+                    </div>
+                    <div class="entity-list" id="customerList">
+                        <div class="empty-state"><i class="ph ph-users-three"></i>
+                            <p data-i18n="no_customers">No customers added yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SUPPLIERS PAGE ===== -->
+                <section class="page" id="page-suppliers">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_suppliers">Suppliers</h1>
+                            <p class="page-subtitle" data-i18n="suppliers_subtitle">Manage your suppliers and payable
+                                amounts.</p>
+                        </div>
+                        <button class="btn btn-primary" id="addSupplierBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_add_supplier">Add Supplier</span></button>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="search-inline"><i class="ph ph-magnifying-glass"></i><input type="text"
+                                id="supplierSearch" placeholder="Search suppliers..."
+                                data-i18n-placeholder="search_suppliers"></div>
+                    </div>
+                    <div class="entity-list" id="supplierList">
+                        <div class="empty-state"><i class="ph ph-truck"></i>
+                            <p data-i18n="no_suppliers">No suppliers added yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SERVICES PAGE (Photocopy/Print/Lamination) ===== -->
+                <section class="page" id="page-services">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_services">Services</h1>
+                            <p class="page-subtitle" data-i18n="services_subtitle">Track Photocopy, Printing &
+                                Lamination.
+                            </p>
+                        </div>
+                        <button class="btn btn-primary" id="addServiceBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_new_service">New Service Entry</span></button>
+                    </div>
+                    <div class="tx-table-wrapper">
+                        <table class="tx-table" id="servicesTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th data-i18n="col_date">Date</th>
+                                    <th data-i18n="col_service">Service Type</th>
+                                    <th data-i18n="col_qty">Pages/Qty</th>
+                                    <th data-i18n="col_amount">Amount</th>
+                                    <th data-i18n="col_status">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="servicesTableBody"></tbody>
+                        </table>
+                        <div class="empty-state" id="servicesEmpty"><i class="ph ph-printer"></i>
+                            <p data-i18n="no_services">No service entries yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== bKash / Nagad PAGE ===== -->
+                <section class="page" id="page-bkash">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_bkash">bKash / Nagad</h1>
+                            <p class="page-subtitle" data-i18n="bkash_subtitle">Track Cash In, Cash Out & Send Money.
+                            </p>
+                        </div>
+                        <button class="btn btn-primary" id="addBkashBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_new_bkash">New MFS Entry</span></button>
+                    </div>
+                    <div class="tx-table-wrapper">
+                        <table class="tx-table" id="bkashTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th data-i18n="col_date">Date</th>
+                                    <th data-i18n="col_type">Type</th>
+                                    <th data-i18n="col_provider">Provider</th>
+                                    <th data-i18n="col_amount">Amount</th>
+                                    <th data-i18n="col_commission">Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bkashTableBody"></tbody>
+                        </table>
+                        <div class="empty-state" id="bkashEmpty"><i class="ph ph-currency-circle-dollar"></i>
+                            <p data-i18n="no_bkash">No MFS transactions yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== EXPENSES PAGE ===== -->
+                <section class="page" id="page-expenses">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_expenses">Expenses</h1>
+                            <p class="page-subtitle" data-i18n="expenses_subtitle">Track daily expenses and overhead
+                                costs.</p>
+                        </div>
+                        <button class="btn btn-primary" id="addExpenseBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_new_expense">New Expense</span></button>
+                    </div>
+                    <div class="expense-summary-row" id="expenseSummaryRow">
+                        <div class="mini-kpi"><span class="mini-kpi-label" data-i18n="today">Today</span><span
+                                class="mini-kpi-val" id="expToday">৳ 0</span></div>
+                        <div class="mini-kpi"><span class="mini-kpi-label" data-i18n="this_week">This Week</span><span
+                                class="mini-kpi-val" id="expWeek">৳ 0</span></div>
+                        <div class="mini-kpi"><span class="mini-kpi-label" data-i18n="this_month">This Month</span><span
+                                class="mini-kpi-val" id="expMonth">৳ 0</span></div>
+                    </div>
+                    <div class="tx-table-wrapper">
+                        <table class="tx-table" id="expensesTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th data-i18n="col_date">Date</th>
+                                    <th data-i18n="col_category">Category</th>
+                                    <th data-i18n="col_description">Description</th>
+                                    <th data-i18n="col_amount">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTableBody"></tbody>
+                        </table>
+                        <div class="empty-state" id="expensesEmpty"><i class="ph ph-wallet"></i>
+                            <p data-i18n="no_expenses">No expenses tracked yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== INVENTORY PAGE ===== -->
+                <section class="page" id="page-inventory">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_inventory">Inventory</h1>
+                            <p class="page-subtitle" data-i18n="inventory_subtitle">Manage product stock, prices and
+                                alerts.</p>
+                        </div>
+                        <button class="btn btn-primary" id="addProductBtn"><i class="ph ph-plus-circle"></i> <span
+                                data-i18n="btn_add_product">Add Product</span></button>
+                    </div>
+                    <div class="entity-list inventory-grid" id="inventoryList">
+                        <div class="empty-state"><i class="ph ph-package"></i>
+                            <p data-i18n="no_products">No products added yet.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== LEDGER PAGE ===== -->
+                <section class="page" id="page-ledger">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_ledger">Ledger</h1>
+                            <p class="page-subtitle" data-i18n="ledger_subtitle">Full transaction history with
+                                debit/credit.</p>
+                        </div>
+                        <div class="ledger-controls">
+                            <select id="ledgerEntityFilter" class="select-input">
+                                <option value="all" data-i18n="all">All</option>
+                            </select>
+                            <input type="date" class="date-input" id="ledgerDateFrom">
+                            <input type="date" class="date-input" id="ledgerDateTo">
+                        </div>
+                    </div>
+                    <div class="tx-table-wrapper">
+                        <table class="tx-table" id="ledgerTable">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="col_date">Date</th>
+                                    <th data-i18n="col_description">Description</th>
+                                    <th data-i18n="col_entity">Entity</th>
+                                    <th data-i18n="col_debit">Debit</th>
+                                    <th data-i18n="col_credit">Credit</th>
+                                    <th data-i18n="col_balance">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledgerTableBody"></tbody>
+                        </table>
+                        <div class="empty-state" id="ledgerEmpty"><i class="ph ph-book-bookmark"></i>
+                            <p data-i18n="no_ledger">No ledger entries.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== REPORTS PAGE ===== -->
+                <section class="page" id="page-reports">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_reports">Reports</h1>
+                            <p class="page-subtitle" data-i18n="reports_subtitle">Generate detailed business reports.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="reports-grid">
+                        <div class="report-card" data-report="daily"><i class="ph ph-calendar-blank"></i>
+                            <h4 data-i18n="report_daily">Daily Report</h4>
+                        </div>
+                        <div class="report-card" data-report="weekly"><i class="ph ph-calendar-dots"></i>
+                            <h4 data-i18n="report_weekly">Weekly Report</h4>
+                        </div>
+                        <div class="report-card" data-report="monthly"><i class="ph ph-calendar"></i>
+                            <h4 data-i18n="report_monthly">Monthly Report</h4>
+                        </div>
+                        <div class="report-card" data-report="profit"><i class="ph ph-chart-line-up"></i>
+                            <h4 data-i18n="report_profit">Profit / Loss</h4>
+                        </div>
+                        <div class="report-card" data-report="due"><i class="ph ph-hand-coins"></i>
+                            <h4 data-i18n="report_due">Due Collection</h4>
+                        </div>
+                        <div class="report-card" data-report="expense"><i class="ph ph-receipt"></i>
+                            <h4 data-i18n="report_expense">Expense Report</h4>
+                        </div>
+                    </div>
+                    <div class="card report-output-card hidden" id="reportOutput">
+                        <div class="card-header">
+                            <h3 id="reportTitle">Report</h3><button class="btn-text" id="exportReportBtn"><i
+                                    class="ph ph-download-simple"></i> Export CSV</button>
+                        </div>
+                        <div id="reportContent"></div>
+                    </div>
+                </section>
+
+            </div><!-- /page-scroll -->
+        </main>
+    </div><!-- /app-shell -->
+
+    <!-- ===== FLOATING VOICE BUTTON ===== -->
+    <button class="fab-voice" id="fabVoice" title="Tally Voice Assistant">
+        <div class="fab-pulse"></div>
+        <i class="ph-bold ph-microphone"></i>
+    </button>
+
+    <!-- ===== VOICE ASSISTANT OVERLAY ===== -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <div class="voice-modal">
+            <button class="voice-close" id="voiceCloseBtn"><i class="ph ph-x"></i></button>
+            <div class="voice-anim-ring" id="voiceRing">
+                <div class="ring r1"></div>
+                <div class="ring r2"></div>
+                <div class="ring r3"></div>
+                <div class="voice-mic-center"><i class="ph-bold ph-microphone"></i></div>
+            </div>
+            <h2 class="voice-status" id="voiceStatus" data-i18n="voice_listening">Listening...</h2>
+            <p class="voice-transcript" id="voiceTranscript"></p>
+            <div class="voice-result hidden" id="voiceResult">
+                <div class="voice-result-icon"><i class="ph-bold ph-check-circle"></i></div>
+                <h3 id="voiceResultTitle">Saved!</h3>
+                <div class="voice-result-details" id="voiceResultDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GENERIC MODAL ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalBox">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal</h3>
+                <button class="modal-close" id="modalCloseBtn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-ghost" id="modalCancelBtn" data-i18n="btn_cancel">Cancel</button>
+                <button class="btn btn-primary" id="modalSaveBtn" data-i18n="btn_save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOAST NOTIFICATION ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Firebase SDK (Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <script src="store.js"></script>
+    <script src="voice.js"></script>
+    <script src="app.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+                    .catch(err => console.warn('⚠️ SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
