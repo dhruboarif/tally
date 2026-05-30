@@ -49,16 +49,42 @@ const App = (() => {
             const currentPass = localStorage.getItem('tally_pass');
             openModal(lang === 'bn' ? 'সিকিউরিটি সেটিংস' : 'Security Settings', `
                 <div class="form-group">
-                    <label>${lang === 'bn' ? 'নতুন পাসওয়ার্ড সেট করুন' : 'Set New Password'}</label>
-                    <input type="password" id="f_new_pass" placeholder="পাসওয়ার্ড দিন" value="${currentPass || ''}" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px;">
+                    <label>${lang === 'bn' ? 'নতুন পাসওয়ার্ড সেট করুন' : 'Set New Password'}</label>
+                    <input type="password" id="f_new_pass" placeholder="পাসওয়ার্ড দিন" value="${currentPass || ''}" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px;">
                 </div>
-                <p style="font-size:12px; color:var(--text-secondary); line-height:1.4;">${lang === 'bn' ? 'এখানে পাসওয়ার্ড সেট থাকলে ডিলিট বা এন্ট্রি এডিট করার সময় পাসওয়ার্ড প্রয়োজন হবে। খালি রাখলে কোনো পাসওয়ার্ড চাইবে না।' : 'Setting a password will require it for delete or edit actions. Leave blank for no security.'}</p>
+                <p style="font-size:12px; color:var(--text-secondary); line-height:1.4;">${lang === 'bn' ? 'এখানে পাসওয়ার্ড সেট থাকলে ডিলিট বা এন্ট্রি এডিট করার সময় পাসওয়ার্ড প্রয়োজন হবে। খালি রাখলে কোনো পাসওয়ার্ড চাইবে না।' : 'Setting a password will require it for delete or edit actions. Leave blank for no security.'}</p>
+
+                <div style="margin-top:24px; border-top:2px solid var(--danger); padding-top:16px;">
+                    <p style="font-size:13px; font-weight:700; color:var(--danger); margin-bottom:8px;">⚠️ ${lang === 'bn' ? 'বিপজ্জনক জোন' : 'Danger Zone'}</p>
+                    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">${lang === 'bn' ? 'সকল হিসেব, কাস্টমার ও লেনদেন একসাথে মুছে ফেলুন। এই কাজ আর পূর্বাবস্থায় ফেরানো যাবে না।' : 'Delete all customers, transactions and data. This cannot be undone.'}</p>
+                    <button id="btnResetAllData" style="width:100%; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="ph ph-trash"></i> ${lang === 'bn' ? 'সব ডেটা রিসেট করুন' : 'Reset All Data'}
+                    </button>
+                </div>
             `, () => {
                 const pass = document.getElementById('f_new_pass').value.trim();
                 localStorage.setItem('tally_pass', pass);
-                toast(pass ? (lang === 'bn' ? 'পাসওয়ার্ড সেট করা হয়েছে' : 'Password set!') : (lang === 'bn' ? 'পাসওয়ার্ড মুছে ফেলা হয়েছে' : 'Password removed!'));
+                toast(pass ? (lang === 'bn' ? 'পাসওয়ার্ড সেট করা হয়েছে' : 'Password set!') : (lang === 'bn' ? 'পাসওয়ার্ড মুছে ফেলা হয়েছে' : 'Password removed!'));
                 closeModal();
             });
+
+            // Attach listener after modal renders
+            setTimeout(() => {
+                const resetBtn = document.getElementById('btnResetAllData');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', async () => {
+                        const confirmed = confirm(lang === 'bn'
+                            ? '⚠️ সতর্কতা! সকল হিসেব স্থায়ীভাবে মুছে যাবে! নিশ্চিত?'
+                            : '⚠️ WARNING! All data will be permanently deleted! Sure?');
+                        if (!confirmed) return;
+                        closeModal();
+                        toast(lang === 'bn' ? 'সমস্ত ডেটা মোছা হচ্ছে...' : 'Deleting all data...', 'info');
+                        await TallyStore.clearAllData();
+                        toast(lang === 'bn' ? 'সম্পূর্ণ রিসেট হয়ে গেছে!' : 'All data cleared!', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    });
+                }
+            }, 100);
         });
     }
 
@@ -108,6 +134,19 @@ const App = (() => {
     async function exportCSV() {
         toast(lang === 'bn' ? 'ব্যাকআপ ডাউনলোড হচ্ছে...' : 'Downloading backup...');
         await TallyStore.exportAllData();
+    }
+
+    async function wipeAllData() {
+        checkSecurity(async () => {
+            const confirmed = confirm(lang === 'bn'
+                ? '⚠️ সতর্কতা! সমস্ত হিসেব স্থায়ীভাবে মুছে যাবে! নিশ্চিত?'
+                : '⚠️ WARNING! All data will be permanently deleted! Are you sure?');
+            if (!confirmed) return;
+            toast(lang === 'bn' ? 'সমস্ত ডেটা মোছা হচ্ছে...' : 'Deleting all data...', 'info');
+            await TallyStore.clearAllData();
+            toast(lang === 'bn' ? 'সম্পূর্ণ রিসেট হয়ে গেছে!' : 'All data cleared!', 'success');
+            setTimeout(() => location.reload(), 1500);
+        });
     }
 
     // ---- Sidebar ----
@@ -171,17 +210,20 @@ const App = (() => {
         newSave.textContent = t('btn_save');
         if (onSave) {
             newSave.addEventListener('click', async () => {
-                const needsPass = (title === 'এন্ট্রি এডিট' || title === 'Edit Entry'); // Protect edit specifically
+                const needsPass = (title === 'এন্ট্রি এডিট' || title === 'Edit Entry');
                 const action = async () => {
                     if (newSave.getAttribute('data-loading') === 'true') return;
                     newSave.setAttribute('data-loading', 'true');
                     newSave.style.opacity = '0.7';
+                    newSave.disabled = true;
                     try {
                         await onSave();
                     } catch (e) {
                         console.error(e);
+                    } finally {
                         newSave.removeAttribute('data-loading');
                         newSave.style.opacity = '1';
+                        newSave.disabled = false;
                     }
                 };
 
@@ -836,19 +878,22 @@ const App = (() => {
             </div>
 
             <div style="display:flex; gap:12px; margin-bottom:16px;">
-                <div style="flex:1; position:relative; border:2px solid var(--danger); border-radius:8px; padding:12px 14px; background:white;">
-                    <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--danger); font-weight:500;">
-                        ${lang === 'bn' ? 'দিলাম/বেচা' : 'Gave/Sale'}
+                <div style="flex:1; position:relative; border:2px solid var(--danger); border-radius:12px; padding:12px 14px; background:white;">
+                    <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--danger); font-weight:600;">
+                        ${lang === 'bn' ? 'দিলাম' : 'Gave'}
                     </label>
                     <div style="display:flex; align-items:center;">
-                        <span style="font-size:18px; font-weight:700; color:var(--text); margin-right:4px;">৳</span>
-                        <input type="number" id="f_tgave" placeholder="" style="border:none; outline:none; background:transparent; font-size:18px; font-weight:700; color:var(--text); width:100%;">
+                        <span style="font-size:18px; font-weight:700; color:var(--danger); margin-right:4px;">৳</span>
+                        <input type="number" id="f_tgave" placeholder="0" style="border:none; outline:none; background:transparent; font-size:18px; font-weight:700; color:var(--text); width:100%;">
                     </div>
                 </div>
-                <div style="flex:1; position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white;">
-                    <div style="display:flex; align-items:center; height:100%;">
-                        <span style="font-size:18px; font-weight:700; color:#cbd5e1; margin-right:4px;">৳</span>
-                        <input type="number" id="f_trecv" placeholder="${lang === 'bn' ? 'পেলাম' : 'Received'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                <div style="flex:1; position:relative; border:2px solid var(--success); border-radius:12px; padding:12px 14px; background:white;">
+                    <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--success); font-weight:600;">
+                        ${lang === 'bn' ? 'পেলাম' : 'Received'}
+                    </label>
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:18px; font-weight:700; color:var(--success); margin-right:4px;">৳</span>
+                        <input type="number" id="f_trecv" placeholder="0" style="border:none; outline:none; background:transparent; font-size:18px; font-weight:700; color:var(--text); width:100%;">
                     </div>
                 </div>
             </div>
@@ -876,33 +921,37 @@ const App = (() => {
             const gave = parseFloat(document.getElementById('f_tgave').value) || 0;
             const recv = parseFloat(document.getElementById('f_trecv').value) || 0;
             const desc = document.getElementById('f_tdesc').value.trim();
-            const dateVal = document.getElementById('f_tdate').value || new Date().toISOString();
+            const rawDate = document.getElementById('f_tdate').value;
+            // If a date is picked, convert from YYYY-MM-DD to ISO string; otherwise use now
+            const dateVal = rawDate ? new Date(rawDate + 'T12:00:00').toISOString() : new Date().toISOString();
 
             if (!name || (gave === 0 && recv === 0)) {
                 toast(lang === 'bn' ? 'নাম ও অন্তত একটি পরিমাণ দিন' : 'Name and amount required', 'error');
                 return;
             }
 
-            // Move modal closing and toast to top for instant feedback
-            closeModal();
-            toast(lang === 'bn' ? 'হিসাব সেভ হচ্ছে...' : 'Saving entry...');
+            try {
+                const promises = [];
+                if (gave > 0) {
+                    promises.push(TallyStore.addTransaction({ type: 'sale', entityName: name, amount: gave, category: desc || (lang === 'bn' ? 'বাকি দেওয়া' : 'Sale'), date: dateVal }));
+                }
+                if (recv > 0) {
+                    promises.push(TallyStore.addTransaction({ type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'পেলাম' : 'Payment Received'), date: dateVal }));
+                }
 
-            const promises = [];
-            if (gave > 0) {
-                promises.push(TallyStore.addTransaction({ type: 'sale', entityName: name, amount: gave, category: desc, date: dateVal }));
+                await Promise.all(promises);
+                const customer = await TallyStore.findOrCreateCustomer(name);
+                customer.due = (parseFloat(customer.due) || 0) + (gave - recv);
+                customer.updatedAt = dateVal;
+                await TallyStore.updateCustomer(customer);
+
+                closeModal();
+                toast(lang === 'bn' ? 'হিসাব সেভ হয়েছে' : 'Entry saved!', 'success');
+                refreshDashboard();
+            } catch (err) {
+                console.error('Save error:', err);
+                toast(lang === 'bn' ? 'সেভ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।' : 'Save failed. Please try again.', 'error');
             }
-            if (recv > 0) {
-                promises.push(TallyStore.addTransaction({ type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: dateVal }));
-            }
-
-            // Run transactions and customer find in parallel
-            await Promise.all(promises);
-            const customer = await TallyStore.findOrCreateCustomer(name);
-            customer.due = (parseFloat(customer.due) || 0) + (gave - recv);
-            await TallyStore.updateCustomer(customer);
-
-            refreshDashboard();
-            toast(lang === 'bn' ? 'হিসাব সেভ হয়েছে' : 'Entry saved!', 'success');
         });
 
         setTimeout(() => {
@@ -1168,7 +1217,6 @@ const App = (() => {
         window.addEventListener('online', () => { setSyncStatus('synced'); toast(lang === 'bn' ? 'ইন্টারনেট সংযোগ হয়েছে ✅' : 'Back online ✅', 'success'); });
         window.addEventListener('offline', () => { setSyncStatus('offline'); toast(lang === 'bn' ? 'অফলাইন মোড — ডেটা পরে sync হবে' : 'Offline mode — data will sync later', 'info'); });
 
-        await TallyStore.seedDemoData();
         applyI18n();
 
         // Topbar Dropdown Toggle
@@ -1272,5 +1320,5 @@ const App = (() => {
     }
 
     document.addEventListener('DOMContentLoaded', init);
-    return { navigateTo, toast, openNewTransactionModal, openSecuritySettings, generateCustomerStatement, downloadCustomerStatement, shareCustomerStatement, quickAddCustomer, confirmDeleteCustomer, editTransaction, exportBackup: () => TallyStore.exportAllData() };
+    return { navigateTo, toast, openNewTransactionModal, openSecuritySettings, generateCustomerStatement, downloadCustomerStatement, shareCustomerStatement, quickAddCustomer, confirmDeleteCustomer, editTransaction, wipeAllData, exportBackup: () => TallyStore.exportAllData() };
 })();

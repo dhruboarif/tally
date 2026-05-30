@@ -1201,7 +1201,6 @@ h6 {
     animation: pageIn 0.3s var(--ease) both;
 }
 
-/* ---------- FLOATING VOICE BUTTON ---------- */
 .fab-voice {
     position: fixed;
     bottom: 120px;
@@ -1221,12 +1220,33 @@ h6 {
     transition: all 0.3s var(--ease-bounce);
 }
 
-.fab-voice:hover {
+.fab-main {
+    position: fixed;
+    bottom: 120px;
+    left: 28px;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    color: white;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 28px var(--accent-glow);
+    z-index: 90;
+    transition: all 0.3s var(--ease-bounce);
+}
+
+.fab-voice:hover,
+.fab-main:hover {
     transform: scale(1.12) translateY(-4px);
     box-shadow: 0 14px 42px var(--accent-glow);
 }
 
-.fab-voice:active {
+.fab-voice:active,
+.fab-main:active {
     transform: scale(0.95);
 }
 
@@ -1764,14 +1784,17 @@ h6 {
     }
 
     /* Floating Action Buttons */
-    .fab-container {
+    .fab-main {
         position: fixed;
         bottom: 84px;
-        /* Above bottom nav */
+        left: 20px;
+        z-index: 90;
+    }
+
+    .fab-voice {
+        position: fixed;
+        bottom: 84px;
         right: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
         z-index: 90;
     }
 

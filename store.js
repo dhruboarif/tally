@@ -224,6 +224,19 @@ const TallyStore = (() => {
         a.click();
     }
 
+    // ---- Clear All Data ----
+    async function clearAllData() {
+        const collections = [COLS.customers, COLS.suppliers, COLS.transactions, COLS.inventory, COLS.voiceLogs];
+        for (const col of collections) {
+            const snapshot = await db.collection(col).get();
+            const batch = db.batch();
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
+    }
+
     return {
         init, generateId,
         // Customers
@@ -239,6 +252,6 @@ const TallyStore = (() => {
         // Summaries
         getDashboardSummary, getLast7DaysCashFlow,
         // Demo & Backup
-        seedDemoData, exportAllData,
+        seedDemoData, exportAllData, clearAllData,
     };
 })();

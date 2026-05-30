@@ -23,7 +23,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <link rel="stylesheet" href="index.css?v=19">
+    <link rel="stylesheet" href="index.css?v=24">
 </head>
 
 <body>
@@ -78,6 +78,8 @@
                             <a href="#"><i class="ph ph-storefront"></i> Dhrubo Computers</a>
                             <a href="#" onclick="App.openSecuritySettings(); return false;"><i class="ph ph-lock"></i>
                                 পাসওয়ার্ড সেট করুন</a>
+                            <a href="#" onclick="App.wipeAllData(); return false;" style="color:var(--danger);"><i
+                                    class="ph ph-trash"></i> রিসেট ডেটা</a>
                             <a href="#"><i class="ph ph-gear"></i> Settings</a>
                         </div>
                     </div>
@@ -477,17 +479,15 @@
     </div><!-- /app-shell -->
 
     <!-- ===== FLOATING ACTIONS ===== -->
-    <div class="fab-container">
-        <!-- New Entry FAB (Android Material Style) -->
-        <button class="fab-main" id="fabNewEntry" title="New Entry">
-            <i class="ph-bold ph-plus"></i>
-        </button>
-        <!-- Voice Assistant FAB -->
-        <button class="fab-voice" id="fabVoice" title="Tally Voice Assistant">
-            <div class="fab-pulse"></div>
-            <i class="ph-bold ph-microphone"></i>
-        </button>
-    </div>
+    <!-- New Entry FAB (Android Material Style) -->
+    <button class="fab-main" id="fabNewEntry" title="New Entry">
+        <i class="ph-bold ph-plus"></i>
+    </button>
+    <!-- Voice Assistant FAB -->
+    <button class="fab-voice" id="fabVoice" title="Tally Voice Assistant">
+        <div class="fab-pulse"></div>
+        <i class="ph-bold ph-microphone"></i>
+    </button>
 
     <!-- ===== VOICE ASSISTANT OVERLAY ===== -->
     <div class="voice-overlay" id="voiceOverlay">
@@ -532,9 +532,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="store.js?v=19"></script>
-    <script src="voice.js?v=19"></script>
-    <script src="app.js?v=19"></script>
+    <script src="store.js?v=24"></script>
+    <script src="voice.js?v=24"></script>
+    <script src="app.js?v=24"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>
