@@ -9,7 +9,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366F1">
+    <meta name="theme-color" content="#6D28D9">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,7 +23,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <link rel="stylesheet" href="index.css?v=11">
+    <link rel="stylesheet" href="index.css?v=19">
 </head>
 
 <body>
@@ -90,16 +90,11 @@
                         <i class="ph-bold ph-translate" style="font-size:22px;"></i>
                         <span class="lang-label">EN</span>
                     </button>
-                    <div title="Inbox"
-                        style="display:flex; flex-direction:column; align-items:center; font-size:11px; cursor:pointer;">
-                        <i class="ph-bold ph-headset" style="font-size:20px;"></i>
-                        <span>ইনবক্স</span>
-                    </div>
-                    <div title="Help"
-                        style="display:flex; flex-direction:column; align-items:center; font-size:11px; cursor:pointer;">
-                        <i class="ph-bold ph-question" style="font-size:20px;"></i>
-                        <span>হেল্প</span>
-                    </div>
+                    <button id="newTxBtnTop" class="btn btn-primary"
+                        style="padding: 6px 12px; font-size: 13px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 4px;">
+                        <i class="ph-bold ph-plus-circle" style="font-size: 16px;"></i>
+                        <span>এন্ট্রি</span>
+                    </button>
                     <span id="syncStatus" title="Cloud Sync"
                         style="font-size:0.7rem; display:flex; align-items:center; gap:3px; opacity:0.7; align-self:center;">
                         <i class="ph ph-cloud" style="font-size:1.1rem;"></i>
@@ -112,13 +107,23 @@
 
                 <!-- ===== DASHBOARD (CUSTOMER LIST) ===== -->
                 <section class="page active" id="page-dashboard">
-                    <div style="margin-bottom: 20px;">
-                        <button class="btn btn-primary" id="newTxBtnHome"
-                            style="width:100%; padding: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);">
-                            <i class="ph-bold ph-plus-circle" style="font-size: 20px;"></i>
-                            <span>নতুন এন্ট্রি</span>
-                        </button>
+
+                    <!-- Summary Stats (Added) -->
+                    <div style="display:flex; gap:12px; margin-bottom:16px;">
+                        <div class="card"
+                            style="flex:1; padding:12px; background:#f0fdf4; border:none; box-shadow:none; border-radius:12px;">
+                            <span style="font-size:12px; color:#166534; font-weight:600;">মোট পাবো</span>
+                            <div id="dashTotalGet"
+                                style="font-size:18px; font-weight:800; color:var(--success); margin-top:4px;">৳ ০</div>
+                        </div>
+                        <div class="card"
+                            style="flex:1; padding:12px; background:#fef2f2; border:none; box-shadow:none; border-radius:12px;">
+                            <span style="font-size:12px; color:#991b1b; font-weight:600;">মোট দেনা</span>
+                            <div id="dashTotalGive"
+                                style="font-size:18px; font-weight:800; color:var(--danger); margin-top:4px;">৳ ০</div>
+                        </div>
                     </div>
+
                     <!-- Dashboard Search & Filter -->
                     <div class="display-flex" style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
                         <div class="search-inline" style="flex:1; margin-bottom:0; background:#F1F5F9;">
@@ -126,10 +131,10 @@
                             <input type="text" id="customerSearchMain" placeholder="খোঁজ"
                                 data-i18n-placeholder="search_placeholder">
                         </div>
-                        <button class="entity-action-btn"
+                        <button class="entity-action-btn" id="btnFilterMain"
                             style="border:none; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:#F1F5F9; border-radius:50%; width:42px; height:42px; flex-shrink:0;"><i
                                 class="ph ph-faders"></i></button>
-                        <button class="entity-action-btn" id="exportReportBtn"
+                        <button class="entity-action-btn" id="btnExportMain"
                             style="border:none; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:#F1F5F9; border-radius:50%; width:42px; height:42px; flex-shrink:0;"><i
                                 class="ph ph-download-simple"></i></button>
                     </div>
@@ -348,38 +353,63 @@
                     </div>
                 </section>
 
-                <!-- ===== LEDGER PAGE ===== -->
+                <!-- ===== LEDGER PAGE (WALLET) ===== -->
                 <section class="page" id="page-ledger">
                     <div class="page-header">
                         <div>
-                            <h1 class="page-title" data-i18n="nav_ledger">Ledger</h1>
-                            <p class="page-subtitle" data-i18n="ledger_subtitle">Full transaction history with
-                                debit/credit.</p>
-                        </div>
-                        <div class="ledger-controls">
-                            <select id="ledgerEntityFilter" class="select-input">
-                                <option value="all" data-i18n="all">All</option>
-                            </select>
-                            <input type="date" class="date-input" id="ledgerDateFrom">
-                            <input type="date" class="date-input" id="ledgerDateTo">
+                            <h1 class="page-title">সকল লেনদেন</h1>
+                            <p class="page-subtitle">আপনার সকল লেনদেনের বিস্তারিত ইতিহাস এখানে দেখুন।</p>
                         </div>
                     </div>
-                    <div class="tx-table-wrapper">
-                        <table class="tx-table" id="ledgerTable">
+
+                    <div class="ledger-controls" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+                        <div style="flex:1; min-width:140px;">
+                            <label
+                                style="font-size:11px; color:var(--text-secondary); margin-bottom:4px; display:block;">কাস্টমার/সাপ্লায়ার
+                                ফিল্টার</label>
+                            <select id="ledgerEntityFilter" class="select-input"
+                                style="width:100%; padding:8px; border-radius:8px;">
+                                <option value="all">All</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <label
+                                style="font-size:11px; color:var(--text-secondary); margin-bottom:4px; display:block;">থেকে</label>
+                            <input type="date" class="date-input" id="ledgerDateFrom"
+                                style="width:100%; padding:8px; border-radius:8px;">
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <label
+                                style="font-size:11px; color:var(--text-secondary); margin-bottom:4px; display:block;">পর্যন্ত</label>
+                            <input type="date" class="date-input" id="ledgerDateTo"
+                                style="width:100%; padding:8px; border-radius:8px;">
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-bottom:15px; padding:12px; background:var(--bg-secondary); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:13px; font-weight:600;">ব্যালেন্স স্ট্যাটাস:</span>
+                        <span id="ledgerNetBalance" style="font-size:16px; font-weight:700; color:var(--primary);">৳
+                            ০</span>
+                    </div>
+
+                    <div class="tx-table-wrapper" style="overflow-x:auto;">
+                        <table class="tx-table" id="ledgerTable" style="min-width:500px;">
                             <thead>
                                 <tr>
-                                    <th data-i18n="col_date">Date</th>
-                                    <th data-i18n="col_description">Description</th>
-                                    <th data-i18n="col_entity">Entity</th>
-                                    <th data-i18n="col_debit">Debit</th>
-                                    <th data-i18n="col_credit">Credit</th>
-                                    <th data-i18n="col_balance">Balance</th>
+                                    <th>তারিখ</th>
+                                    <th>বিবরণ</th>
+                                    <th>কার সাথে</th>
+                                    <th style="color:var(--danger)">খরচ/দিলাম</th>
+                                    <th style="color:var(--success)">জমা/পেলাম</th>
+                                    <th>ব্যালেন্স</th>
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody"></tbody>
                         </table>
-                        <div class="empty-state" id="ledgerEmpty"><i class="ph ph-book-bookmark"></i>
-                            <p data-i18n="no_ledger">No ledger entries.</p>
+                        <div class="empty-state" id="ledgerEmpty" style="padding:40px 0;">
+                            <i class="ph ph-mask-sad" style="font-size:48px; opacity:0.3;"></i>
+                            <p>কোনো লেনদেন পাওয়া যায়নি।</p>
                         </div>
                     </div>
                 </section>
@@ -437,7 +467,7 @@
             </a>
             <a href="#ledger" class="bottom-nav-item" data-page="ledger">
                 <i class="ph-bold ph-wallet"></i>
-                <span data-i18n="nav_wallet">ওয়ালেট</span>
+                <span>লেনদেন</span>
             </a>
             <a href="#security" class="bottom-nav-item" onclick="App.openSecuritySettings(); return false;">
                 <i class="ph-bold ph-shield-check"></i>
@@ -502,9 +532,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="store.js?v=11"></script>
-    <script src="voice.js?v=11"></script>
-    <script src="app.js?v=11"></script>
+    <script src="store.js?v=19"></script>
+    <script src="voice.js?v=19"></script>
+    <script src="app.js?v=19"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>

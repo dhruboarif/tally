@@ -6,7 +6,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0F172A",
-  "theme_color": "#6366F1",
+  "theme_color": "#6D28D9",
   "lang": "bn",
   "icons": [
     {
@@ -23,5 +23,9 @@
     }
   ],
   "screenshots": [],
-  "categories": ["finance", "business", "productivity"]
+  "categories": [
+    "finance",
+    "business",
+    "productivity"
+  ]
 }

@@ -9,6 +9,19 @@ const App = (() => {
 
     function t(key) { return (i18n[lang] && i18n[lang][key]) || (i18n.en[key]) || key; }
     function fmt(n) { return '৳ ' + (parseFloat(n) || 0).toLocaleString('en-IN'); }
+    function timeAgo(date) {
+        if (!date) return lang === 'bn' ? 'কোনো আপডেট নেই' : 'No update';
+        const now = new Date();
+        const diff = Math.floor((now - new Date(date)) / 1000);
+        if (diff < 60) return lang === 'bn' ? 'এইমাত্র' : 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + (lang === 'bn' ? ' মিনিট আগে' : 'm ago');
+        if (diff < 86400) return Math.floor(diff / 3600) + (lang === 'bn' ? ' ঘণ্টা আগে' : 'h ago');
+        const days = Math.floor(diff / 86400);
+        if (days === 1) return lang === 'bn' ? 'গতকাল' : 'Yesterday';
+        if (days < 30) return days + (lang === 'bn' ? ' দিন আগে' : ' days ago');
+        const months = Math.floor(days / 30);
+        return months + (lang === 'bn' ? ' মাস আগে' : ' mo ago');
+    }
 
     // ---- Routing ----
     let currentPage = 'dashboard';
@@ -62,6 +75,39 @@ const App = (() => {
         } else if (input !== null) {
             toast(lang === 'bn' ? 'ভুল পাসওয়ার্ড!' : 'Wrong password!', 'error');
         }
+    }
+
+    function openFilterSettings() {
+        const currentSort = localStorage.getItem('tally_sort') || 'name_asc';
+        openModal(lang === 'bn' ? 'সর্ট করুন' : 'Sort Options', `
+            <div class="form-group">
+                <label style="font-weight:600; display:block; margin-bottom:8px;">${lang === 'bn' ? 'কিভাবে সর্ট করতে চান?' : 'How to sort?'}</label>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#f8fafc; border-radius:10px; cursor:pointer;">
+                        <input type="radio" name="sort_opt" value="name_asc" ${currentSort === 'name_asc' ? 'checked' : ''}>
+                        <span>${lang === 'bn' ? 'নাম অনুসারে (ক - হ)' : 'By Name (A - Z)'}</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#f8fafc; border-radius:10px; cursor:pointer;">
+                        <input type="radio" name="sort_opt" value="due_high" ${currentSort === 'due_high' ? 'checked' : ''}>
+                        <span>${lang === 'bn' ? 'বেশি বাকি সবার উপরে' : 'Highest Due First'}</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#f8fafc; border-radius:10px; cursor:pointer;">
+                        <input type="radio" name="sort_opt" value="due_low" ${currentSort === 'due_low' ? 'checked' : ''}>
+                        <span>${lang === 'bn' ? 'কম বাকি সবার উপরে' : 'Lowest Due First'}</span>
+                    </label>
+                </div>
+            </div>
+        `, () => {
+            const selected = document.querySelector('input[name="sort_opt"]:checked').value;
+            localStorage.setItem('tally_sort', selected);
+            refreshDashboard(null, selected);
+            closeModal();
+        });
+    }
+
+    async function exportCSV() {
+        toast(lang === 'bn' ? 'ব্যাকআপ ডাউনলোড হচ্ছে...' : 'Downloading backup...');
+        await TallyStore.exportAllData();
     }
 
     // ---- Sidebar ----
@@ -219,7 +265,7 @@ const App = (() => {
         else if (page === 'cashbox') await refreshCashbox();
     }
 
-    async function refreshDashboard(filter = null) {
+    async function refreshDashboard(filter = null, sortBy = localStorage.getItem('tally_sort') || 'name_asc') {
         let customers = await TallyStore.getCustomers();
         let suppliers = await TallyStore.getSuppliers();
 
@@ -236,11 +282,34 @@ const App = (() => {
             );
         }
 
+        // Apply sorting
+        if (sortBy === 'name_asc') customers.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'bn'));
+        else if (sortBy === 'name_desc') customers.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'bn'));
+        else if (sortBy === 'due_high') customers.sort((a, b) => (parseFloat(b.due) || 0) - (parseFloat(a.due) || 0));
+        else if (sortBy === 'due_low') customers.sort((a, b) => (parseFloat(a.due) || 0) - (parseFloat(b.due) || 0));
+
         // Update counts
         const dashCustomerCount = document.getElementById('dashCustomerCount');
         const dashSupplierCount = document.getElementById('dashSupplierCount');
         if (dashCustomerCount) dashCustomerCount.textContent = customers.length.toLocaleString('en-IN') || '০';
         if (dashSupplierCount) dashSupplierCount.textContent = suppliers.length.toLocaleString('en-IN') || '০';
+
+        // Calculate Totals
+        let totalReceivable = 0;
+        let totalPayable = 0;
+        customers.forEach(c => {
+            const d = parseFloat(c.due) || 0;
+            if (d > 0) totalReceivable += d; else if (d < 0) totalPayable += Math.abs(d);
+        });
+        suppliers.forEach(s => {
+            const d = parseFloat(s.due) || 0;
+            if (d > 0) totalPayable += d; else if (d < 0) totalReceivable += Math.abs(d);
+        });
+
+        const dashTotalGet = document.getElementById('dashTotalGet');
+        const dashTotalGive = document.getElementById('dashTotalGive');
+        if (dashTotalGet) dashTotalGet.textContent = fmt(totalReceivable);
+        if (dashTotalGive) dashTotalGive.textContent = fmt(totalPayable);
 
         const list = document.getElementById('dashboardCustomerList');
         if (!list) return;
@@ -273,14 +342,14 @@ const App = (() => {
             const amtStr = Math.abs(c.due || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
             card.innerHTML = `
-                <div class="entity-avatar" style="background:#E2E8F0; color:#475569; width:44px; height:44px; border-radius:50%; font-size:16px;">${initials}</div>
-                <div class="entity-info" style="margin-left:4px; min-width:0; flex:1;">
-                    <h4 style="font-size:16px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.name}</h4>
-                    <p style="font-size:13px; color:#94A3B8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.phone || (lang === 'bn' ? 'হালনাগাদ নেই' : 'No update')}</p>
+                <div class="entity-avatar" style="background:#E2E8F0; color:#475569; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px;">${initials}</div>
+                <div class="entity-info" style="margin-left:12px; min-width:0; flex:1;">
+                    <h4 style="font-size:16px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.name}</h4>
+                    <p style="font-size:12px; color:#64748B; margin-top:2px;">${timeAgo(c.updatedAt)}</p>
                 </div>
                 <div class="entity-due" style="display:flex; align-items:center; gap:8px;">
-                    <span class="due-amount" style="font-size:18px; font-weight:600; color:${isRec ? 'var(--danger)' : 'var(--success)'};">৳ ${amtStr}</span>
-                    <i class="ph ph-caret-right" style="color:#CBD5E1; font-size:20px;"></i>
+                    <span class="due-amount" style="font-size:17px; font-weight:700; color:${isRec ? 'var(--danger)' : 'var(--success)'};">৳ ${amtStr}</span>
+                    <i class="ph ph-caret-right" style="color:#CBD5E1; font-size:18px;"></i>
                 </div>
             `;
             list.appendChild(card);
@@ -411,19 +480,24 @@ const App = (() => {
 
             if (gave === 0 && recv === 0) return;
 
+            // Instant feedback
+            closeModal();
+            toast(lang === 'bn' ? 'সেভ হচ্ছে...' : 'Saving...');
+
+            const ps = [];
             if (gave > 0) {
-                await TallyStore.addTransaction({ type: 'sale', entityName: freshCustomer.name, amount: gave, category: desc || (lang === 'bn' ? 'বাকি এন্ট্রি' : 'Due'), date: new Date().toISOString() });
+                ps.push(TallyStore.addTransaction({ type: 'sale', entityName: freshCustomer.name, amount: gave, category: desc || (lang === 'bn' ? 'বাকি এন্ট্রি' : 'Due'), date: new Date().toISOString() }));
             }
             if (recv > 0) {
-                await TallyStore.addTransaction({ type: 'payment_in', entityName: freshCustomer.name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: new Date().toISOString() });
+                ps.push(TallyStore.addTransaction({ type: 'payment_in', entityName: freshCustomer.name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: new Date().toISOString() }));
             }
 
+            await Promise.all(ps);
             freshCustomer.due = (parseFloat(freshCustomer.due) || 0) + (gave - recv);
             await TallyStore.updateCustomer(freshCustomer);
 
-            toast(lang === 'bn' ? 'হিসাব আপডেট হয়েছে' : 'Due updated!');
-            closeModal();
             refreshDashboard();
+            toast(lang === 'bn' ? 'হিসাব আপডেট হয়েছে' : 'Due updated!', 'success');
         });
 
         // Auto-focus the "দিলাম/বেচা" input
@@ -454,20 +528,26 @@ const App = (() => {
                 const newDiff = isSale ? newAmt : -newAmt;
                 const adjust = newDiff - oldDiff;
 
+                // Instant UI feedback
+                closeModal();
+                toast(lang === 'bn' ? 'আপডেট হচ্ছে...' : 'Updating...');
+
                 tx.amount = newAmt;
                 tx.category = newDesc;
-                await TallyStore.updateTransaction(tx);
+
+                const p1 = TallyStore.updateTransaction(tx);
+                let p2 = Promise.resolve();
 
                 const customers = await TallyStore.getCustomers();
                 const c = customers.find(x => x.id === customerId);
                 if (c) {
                     c.due = (parseFloat(c.due) || 0) + adjust;
-                    await TallyStore.updateCustomer(c);
+                    p2 = TallyStore.updateCustomer(c);
                 }
 
-                toast(lang === 'bn' ? 'এডিট করা হয়েছে' : 'Updated successfully');
-                closeModal();
+                await Promise.all([p1, p2]);
                 refreshDashboard();
+                toast(lang === 'bn' ? 'সফলভাবে আপডেট করা হয়েছে' : 'Updated successfully', 'success');
             },
             async () => {
                 if (confirm(lang === 'bn' ? 'এই এন্ট্রিটি কি ডিলিট করতে চান?' : 'Delete this entry?')) {
@@ -673,26 +753,67 @@ const App = (() => {
     // ---- LEDGER ----
     async function refreshLedger() {
         const txns = (await TallyStore.getTransactions()).sort((a, b) => new Date(a.date) - new Date(b.date));
-        const body = document.getElementById('ledgerTableBody'); body.innerHTML = '';
-        document.getElementById('ledgerEmpty').classList.toggle('hidden', txns.length > 0);
-        document.getElementById('ledgerTable').classList.toggle('hidden', txns.length === 0);
-        let balance = 0;
-        // Populate entity filter
+        const body = document.getElementById('ledgerTableBody');
+        if (!body) return;
+        body.innerHTML = '';
+
         const sel = document.getElementById('ledgerEntityFilter');
-        const entities = [...new Set(txns.map(t => t.entityName).filter(Boolean))];
-        sel.innerHTML = '<option value="all">All</option>' + entities.map(e => `<option value="${e}"> ${e}</option> `).join('');
-        const filterEntity = sel.value;
+        const currentFilter = sel ? sel.value : 'all';
+
+        const entities = [...new Set(txns.map(t => t.entityName).filter(Boolean))].sort();
+        if (sel) {
+            sel.innerHTML = '<option value="all">সকল কাস্টমার</option>' +
+                entities.map(e => `<option value="${e}" ${e === currentFilter ? 'selected' : ''}>${e}</option>`).join('');
+        }
+
+        const filterEntity = sel ? sel.value : 'all';
         const fromDate = document.getElementById('ledgerDateFrom').value;
         const toDate = document.getElementById('ledgerDateTo').value;
-        txns.forEach(tx => {
-            if (filterEntity !== 'all' && tx.entityName !== filterEntity) return;
+
+        let runningBalance = 0;
+        let displayedCount = 0;
+
+        // Filter and calculate running balance in ascending order first
+        let filtered = txns.filter(tx => {
+            if (filterEntity !== 'all' && tx.entityName !== filterEntity) return false;
             const ds = tx.date ? tx.date.split('T')[0] : '';
-            if (fromDate && ds < fromDate) return; if (toDate && ds > toDate) return;
-            const amt = parseFloat(tx.amount) || 0;
-            const isDebit = ['purchase', 'expense', 'payment_out'].includes(tx.type);
-            if (isDebit) balance -= amt; else balance += amt;
-            body.innerHTML += `<tr><td>${new Date(tx.date).toLocaleDateString()}</td><td>${tx.description || tx.type}</td><td>${tx.entityName || '—'}</td><td>${isDebit ? fmt(amt) : ''}</td><td>${!isDebit ? fmt(amt) : ''}</td><td style="font-weight:700;color:${balance >= 0 ? 'var(--success)' : 'var(--danger)'}">${fmt(balance)}</td></tr> `;
+            if (fromDate && ds < fromDate) return false;
+            if (toDate && ds > toDate) return false;
+            return true;
         });
+
+        filtered.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(tx => {
+            const amt = parseFloat(tx.amount) || 0;
+            const isDebit = ['purchase', 'expense', 'payment_out', 'sale'].includes(tx.type);
+            if (isDebit) runningBalance -= amt; else runningBalance += amt;
+            tx._rb = runningBalance;
+        });
+
+        // Now sort descending for display
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        filtered.forEach(tx => {
+            displayedCount++;
+            const amt = parseFloat(tx.amount) || 0;
+            const isDebit = ['purchase', 'expense', 'payment_out', 'sale'].includes(tx.type);
+
+            body.innerHTML += `<tr>
+                <td>${new Date(tx.date).toLocaleDateString()}</td>
+                <td style="font-size:12px;">${tx.category || tx.type}</td>
+                <td><strong>${tx.entityName || '—'}</strong></td>
+                <td style="color:var(--danger); text-align:right;">${isDebit ? amt.toLocaleString() : ''}</td>
+                <td style="color:var(--success); text-align:right;">${!isDebit ? amt.toLocaleString() : ''}</td>
+                <td style="font-weight:700; text-align:right; color:${tx._rb >= 0 ? 'var(--success)' : 'var(--danger)'}">${Math.abs(tx._rb).toLocaleString()}</td>
+            </tr>`;
+        });
+
+        const empty = document.getElementById('ledgerEmpty');
+        const table = document.getElementById('ledgerTable');
+        if (empty) empty.classList.toggle('hidden', displayedCount > 0);
+        if (table) table.classList.toggle('hidden', displayedCount === 0);
+
+        const netBal = document.getElementById('ledgerNetBalance');
+        if (netBal) netBal.textContent = fmt(runningBalance);
     }
 
     // ---- SIMPLE NEW ENTRY MODAL ----
@@ -762,20 +883,26 @@ const App = (() => {
                 return;
             }
 
+            // Move modal closing and toast to top for instant feedback
+            closeModal();
+            toast(lang === 'bn' ? 'হিসাব সেভ হচ্ছে...' : 'Saving entry...');
+
+            const promises = [];
             if (gave > 0) {
-                await TallyStore.addTransaction({ type: 'sale', entityName: name, amount: gave, category: desc, date: dateVal });
+                promises.push(TallyStore.addTransaction({ type: 'sale', entityName: name, amount: gave, category: desc, date: dateVal }));
             }
             if (recv > 0) {
-                await TallyStore.addTransaction({ type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: dateVal });
+                promises.push(TallyStore.addTransaction({ type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: dateVal }));
             }
 
+            // Run transactions and customer find in parallel
+            await Promise.all(promises);
             const customer = await TallyStore.findOrCreateCustomer(name);
             customer.due = (parseFloat(customer.due) || 0) + (gave - recv);
             await TallyStore.updateCustomer(customer);
 
-            toast(lang === 'bn' ? 'হিসাব সেভ হয়েছে' : 'Entry saved!');
-            closeModal();
             refreshDashboard();
+            toast(lang === 'bn' ? 'হিসাব সেভ হয়েছে' : 'Entry saved!', 'success');
         });
 
         setTimeout(() => {
@@ -1101,6 +1228,23 @@ const App = (() => {
         listen('addBkashBtn', 'click', () => openNewTransactionModal({ type: 'mfs_in' }));
         listen('addExpenseBtn', 'click', () => openNewTransactionModal({ type: 'expense' }));
         listen('addProductBtn', 'click', () => openProductModal(null));
+        listen('btnFilterMain', 'click', openFilterSettings);
+        listen('btnExportMain', 'click', exportCSV);
+        listen('ledgerEntityFilter', 'change', refreshLedger);
+        listen('ledgerDateFrom', 'change', refreshLedger);
+        listen('ledgerDateTo', 'change', refreshLedger);
+
+        // Set default dates for Ledger
+        const fromInput = document.getElementById('ledgerDateFrom');
+        const toInput = document.getElementById('ledgerDateTo');
+        if (fromInput && toInput) {
+            const now = new Date();
+            const lastWeek = new Date(now); lastWeek.setDate(now.getDate() - 7);
+            const nextWeek = new Date(now); nextWeek.setDate(now.getDate() + 7);
+            fromInput.value = lastWeek.toISOString().split('T')[0];
+            toInput.value = nextWeek.toISOString().split('T')[0];
+        }
+
         listen('viewAllTxBtn', 'click', () => navigateTo('ledger'));
         listen('customerSearch', 'input', e => refreshCustomers(e.target.value));
         listen('supplierSearch', 'input', e => refreshSuppliers(e.target.value));

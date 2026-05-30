@@ -5,15 +5,15 @@
 
 /* ---------- CSS CUSTOM PROPERTIES (DESIGN TOKENS) ---------- */
 :root {
-    /* Core palette: Tally Khata Red Theme */
-    --hue-primary: 353;
-    --primary: #C1121F;
-    --primary-hover: #A00F1A;
-    --primary-light: #FEE2E2;
-    --primary-subtle: #FEF2F2;
+    /* Core palette: Tally Khata Purple Theme */
+    --hue-primary: 262;
+    --primary: #6D28D9;
+    --primary-hover: #5B21B6;
+    --primary-light: #EDE9FE;
+    --primary-subtle: #F5F3FF;
 
-    --accent: #E5383B;
-    --accent-glow: rgba(193, 18, 31, 0.35);
+    --accent: #8B5CF6;
+    --accent-glow: rgba(109, 40, 217, 0.35);
 
     /* Semantic */
     --success: #10B981;
@@ -70,9 +70,9 @@
     /* Gradient presets */
     --grad-sales: linear-gradient(135deg, #10B981, #059669);
     --grad-purchases: linear-gradient(135deg, #F59E0B, #D97706);
-    --grad-receivable: linear-gradient(135deg, #EF4444, #B91C1C);
+    --grad-receivable: linear-gradient(135deg, #7C3AED, #5B21B6);
     --grad-cash: linear-gradient(135deg, #3B82F6, #1D4ED8);
-    --grad-voice: linear-gradient(135deg, #C1121F, #E5383B);
+    --grad-voice: linear-gradient(135deg, #6D28D9, #8B5CF6);
 }
 
 /* ---------- DARK MODE ---------- */
