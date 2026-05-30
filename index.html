@@ -23,7 +23,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <link rel="stylesheet" href="index.css?v=24">
+    <link rel="stylesheet" href="index.css?v=26">
 </head>
 
 <body>
@@ -162,8 +162,12 @@
                             <p class="page-subtitle" data-i18n="customers_subtitle">Manage your customers and their
                                 dues.</p>
                         </div>
-                        <button class="btn btn-primary" id="addCustomerBtn"><i class="ph ph-plus-circle"></i> <span
-                                data-i18n="btn_add_customer">Add Customer</span></button>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-secondary" id="importContactBtn" title="Sync Contacts"
+                                style="padding: 8px 12px;"><i class="ph ph-address-book"></i></button>
+                            <button class="btn btn-primary" id="addCustomerBtn"><i class="ph ph-plus-circle"></i> <span
+                                    data-i18n="btn_add_customer">Add Customer</span></button>
+                        </div>
                     </div>
                     <div class="filter-bar">
                         <div class="search-inline"><i class="ph ph-magnifying-glass"></i><input type="text"
@@ -532,9 +536,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="store.js?v=24"></script>
-    <script src="voice.js?v=24"></script>
-    <script src="app.js?v=24"></script>
+    <script src="store.js?v=26"></script>
+    <script src="voice.js?v=26"></script>
+    <script src="app.js?v=26"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>

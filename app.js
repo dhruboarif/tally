@@ -859,18 +859,22 @@ const App = (() => {
     }
 
     // ---- SIMPLE NEW ENTRY MODAL ----
-    function openNewTransactionModal() {
+    async function openNewTransactionModal(override = null) {
         const today = new Date();
         const dateStr = lang === 'bn' ? today.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' }) : today.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 
+        const customers = await TallyStore.getCustomers();
+        const datalistHTML = Object.values(customers).map(c => `<option value="${c.name}">`).join('');
+
         const bodyHTML = `
+            <datalist id="customerNamesList">${datalistHTML}</datalist>
             <div style="margin-bottom:15px; position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white;">
                 <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--text-secondary); font-weight:500;">
                     ${lang === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name'}
                 </label>
                 <div style="display:flex; align-items:center;">
                     <i class="ph ph-user" style="font-size:20px; color:var(--text-muted); margin-right:8px;"></i>
-                    <input type="text" id="f_tname" placeholder="${lang === 'bn' ? 'নাম লিখুন' : 'Enter Name'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                    <input type="text" id="f_tname" list="customerNamesList" autocomplete="off" placeholder="${lang === 'bn' ? 'নাম লিখুন' : 'Enter Name'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
                     <button type="button" id="btnSelectContact" style="border:none; background:none; color:var(--primary); cursor:pointer; padding:4px;">
                         <i class="ph ph-address-book" style="font-size:24px;"></i>
                     </button>
@@ -978,15 +982,15 @@ const App = (() => {
         }, 300);
     }
 
-    function quickAddCustomer(name) {
-        openNewTransactionModal();
+    async function quickAddCustomer(name) {
+        await openNewTransactionModal();
         setTimeout(() => {
             const input = document.getElementById('f_tname');
             if (input) {
                 input.value = name;
                 document.getElementById('f_tgave').focus();
             }
-        }, 300);
+        }, 100);
     }
 
     // ---- REPORTS ----
@@ -1194,6 +1198,46 @@ const App = (() => {
     }
 
     // ---- INIT ----
+    async function importContactsFromPhone() {
+        if (!('contacts' in navigator && 'ContactsManager' in window)) {
+            toast(lang === 'bn' ? 'আপনার ব্রাউজার বা ফোন কন্টাক্ট সাপোর্ট করে না।' : 'Contact API is not supported on this device.', 'error');
+            return;
+        }
+
+        try {
+            const props = ['name', 'tel'];
+            const opts = { multiple: true };
+            const contacts = await navigator.contacts.select(props, opts);
+
+            if (!contacts || contacts.length === 0) return;
+
+            toast(lang === 'bn' ? 'কন্টাক্ট সেভ করা হচ্ছে...' : 'Saving contacts...', 'info');
+            let added = 0;
+
+            for (const c of contacts) {
+                const name = c.name && c.name.length ? c.name[0] : 'Unknown';
+                const phone = c.tel && c.tel.length ? c.tel[0] : '';
+
+                if (name && name !== 'Unknown') {
+                    await TallyStore.addCustomer({
+                        name: name,
+                        phone: phone,
+                        address: '',
+                        openingBalance: 0
+                    });
+                    added++;
+                }
+            }
+
+            toast(lang === 'bn' ? `${added} জন সেভ হয়েছে!` : `${added} contacts saved!`, 'success');
+            if (currentPage === 'customers') refreshCustomers();
+            if (currentPage === 'dashboard') refreshDashboard();
+
+        } catch (err) {
+            console.error('Contact Pick Error:', err);
+        }
+    }
+
     async function init() {
         // Restore preferences
         const savedTheme = localStorage.getItem('tally_theme');
@@ -1270,6 +1314,7 @@ const App = (() => {
         listen('newTxBtnCashbox', 'click', () => openNewTransactionModal());
         listen('newTxBtnHome', 'click', () => openNewTransactionModal());
         listen('customerSearchMain', 'input', e => refreshDashboard(e.target.value));
+        listen('importContactBtn', 'click', importContactsFromPhone);
         listen('addCustomerBtn', 'click', () => openCustomerModal(null));
         listen('addSupplierBtn', 'click', () => openSupplierModal(null));
         listen('addServiceBtn', 'click', () => openNewTransactionModal({ type: 'service' }));
