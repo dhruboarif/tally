@@ -23,7 +23,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="index.css?v=7">
 </head>
 
 <body>
@@ -32,7 +32,7 @@
     <div id="app" class="app-shell">
 
         <!-- SIDEBAR NAVIGATION -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar" style="display: none !important;">
             <div class="sidebar-brand">
                 <div class="brand-logo"><i class="ph-bold ph-chart-line-up"></i></div>
                 <span class="brand-name">Dhrubo Computers</span>
@@ -61,28 +61,45 @@
                 </div>
             </div>
         </aside>
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="sidebar-overlay" id="sidebarOverlay" style="display: none !important;"></div>
 
         <!-- MAIN CONTENT -->
         <main class="main-area">
-            <!-- TOP HEADER BAR -->
+            <!-- TOP HEADER BAR (Android App Bar Style) -->
             <header class="topbar">
-                <button class="hamburger" id="hamburgerBtn"><i class="ph ph-list"></i></button>
-                <div class="topbar-search">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" id="globalSearch" placeholder="Search anything..."
-                        data-i18n-placeholder="search_placeholder">
+                <div class="topbar-title">
+                    <div class="dropdown">
+                        <span class="brand-name-mobile"
+                            style="cursor:pointer; display:flex; align-items:center; gap:4px;">
+                            <span data-i18n="user_shop_name">Dhrubo Computers</span>
+                            <i class="ph-bold ph-caret-down" style="font-size:14px;"></i>
+                        </span>
+                        <div class="dropdown-content">
+                            <a href="#"><i class="ph ph-storefront"></i> Dhrubo Computers</a>
+                            <a href="#"><i class="ph ph-gear"></i> Settings</a>
+                        </div>
+                    </div>
+                    <div style="font-size:11px; opacity:0.9; margin-top:2px;">স্ট্যান্ডার্ড</div>
                 </div>
-                <div class="topbar-actions">
-                    <button class="topbar-icon-btn" id="langToggleBtn" title="Toggle Language"><span
-                            class="lang-label">EN</span></button>
-                    <button class="topbar-icon-btn" id="themeToggleBtn" title="Toggle Theme"><i
-                            class="ph ph-moon"></i></button>
-                    <button class="topbar-icon-btn notif-btn" id="notifBtn" title="Notifications">
-                        <i class="ph ph-bell"></i><span class="notif-badge" id="notifBadge">2</span>
+                <!-- Icons on right side of app bar -->
+                <div class="topbar-actions" style="gap:14px;">
+                    <button id="langToggleBtn" title="Toggle Language"
+                        style="background:none; border:none; color:white; font-size:11px; cursor:pointer; display:flex; flex-direction:column; align-items:center;">
+                        <i class="ph-bold ph-translate" style="font-size:22px;"></i>
+                        <span class="lang-label">EN</span>
                     </button>
+                    <div title="Inbox"
+                        style="display:flex; flex-direction:column; align-items:center; font-size:11px; cursor:pointer;">
+                        <i class="ph-bold ph-headset" style="font-size:20px;"></i>
+                        <span>ইনবক্স</span>
+                    </div>
+                    <div title="Help"
+                        style="display:flex; flex-direction:column; align-items:center; font-size:11px; cursor:pointer;">
+                        <i class="ph-bold ph-question" style="font-size:20px;"></i>
+                        <span>হেল্প</span>
+                    </div>
                     <span id="syncStatus" title="Cloud Sync"
-                        style="font-size:0.7rem; display:flex; align-items:center; gap:3px; opacity:0.7;">
+                        style="font-size:0.7rem; display:flex; align-items:center; gap:3px; opacity:0.7; align-self:center;">
                         <i class="ph ph-cloud" style="font-size:1.1rem;"></i>
                     </span>
                 </div>
@@ -93,20 +110,32 @@
 
                 <!-- ===== DASHBOARD (CUSTOMER LIST) ===== -->
                 <section class="page active" id="page-dashboard">
-                    <div class="page-header">
-                        <div>
-                            <h1 class="page-title" data-i18n="nav_customers">Customers List</h1>
-                            <p class="page-subtitle" data-i18n="dashboard_subtitle_simple">Manage your customer dues
-                                easily.</p>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary" id="newTxBtnHome"
+                            style="width:100%; padding: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);">
+                            <i class="ph-bold ph-plus-circle" style="font-size: 20px;"></i>
+                            <span>নতুন এন্ট্রি</span>
+                        </button>
+                    </div>
+                    <!-- Dashboard Search & Filter -->
+                    <div class="display-flex" style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+                        <div class="search-inline" style="flex:1; margin-bottom:0; background:#F1F5F9;">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" id="customerSearchMain" placeholder="খোঁজ"
+                                data-i18n-placeholder="search_placeholder">
                         </div>
-                        <button class="btn btn-primary" id="newTxBtnTop"><i class="ph ph-plus-circle"></i> <span
-                                data-i18n="btn_new_entry">New Entry</span></button>
+                        <button class="entity-action-btn"
+                            style="border:none; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:#F1F5F9; border-radius:50%; width:42px; height:42px; flex-shrink:0;"><i
+                                class="ph ph-faders"></i></button>
+                        <button class="entity-action-btn" id="exportReportBtn"
+                            style="border:none; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:#F1F5F9; border-radius:50%; width:42px; height:42px; flex-shrink:0;"><i
+                                class="ph ph-download-simple"></i></button>
                     </div>
 
-                    <div class="search-box-large">
-                        <i class="ph ph-magnifying-glass"></i>
-                        <input type="text" id="customerSearchMain" placeholder="Search customer name..."
-                            data-i18n-placeholder="search_placeholder">
+                    <div style="font-size:15px; color:var(--text-secondary); margin-bottom:12px; font-weight:600;"
+                        id="dashboardStatsLabel">
+                        কাস্টমার <span id="dashCustomerCount">০</span> / সাপ্লায়ার <span
+                            id="dashSupplierCount">০</span>
                     </div>
 
                     <div class="customer-grid-container">
@@ -281,6 +310,42 @@
                     </div>
                 </section>
 
+                <!-- ===== CASHBOX PAGE ===== -->
+                <section class="page" id="page-cashbox">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title" data-i18n="nav_cashbox">ক্যাশবক্স</h1>
+                            <p class="page-subtitle">আপনার দৈনিক নগদ হিসাব দেখুন।</p>
+                        </div>
+                        <button class="btn btn-primary" id="newTxBtnCashbox"
+                            style="padding: 12px 20px; font-weight: 600;">
+                            <i class="ph ph-plus-circle"></i>
+                            <span>নতুন লেনদেন</span>
+                        </button>
+                    </div>
+
+                    <div class="expense-summary-row" style="margin-bottom: 24px; gap: 12px;">
+                        <div class="mini-kpi" style="flex: 1; background: #f0fdf4;">
+                            <span class="mini-kpi-label" style="color: #166534;">জমা (Cash In)</span>
+                            <span class="mini-kpi-val" id="cashboxIn"
+                                style="color: var(--success); font-size: 1.2rem;">৳ ০</span>
+                        </div>
+                        <div class="mini-kpi" style="flex: 1; background: #fef2f2;">
+                            <span class="mini-kpi-label" style="color: #991b1b;">খরচ (Cash Out)</span>
+                            <span class="mini-kpi-val" id="cashboxOut"
+                                style="color: var(--danger); font-size: 1.2rem;">৳ ০</span>
+                        </div>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 20px; text-align: center; background: var(--bg-secondary); border: none;">
+                        <span style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">ক্যাশে বর্তমান
+                            ব্যালেন্স</span>
+                        <div id="cashboxBalance"
+                            style="font-size: 28px; font-weight: 800; color: var(--primary); margin-top: 8px;">৳ ০</div>
+                    </div>
+                </section>
+
                 <!-- ===== LEDGER PAGE ===== -->
                 <section class="page" id="page-ledger">
                     <div class="page-header">
@@ -357,13 +422,41 @@
 
             </div><!-- /page-scroll -->
         </main>
+
+        <!-- MOBILE BOTTOM NAVIGATION (Tally Khata Style) -->
+        <nav class="bottom-nav" id="bottomNav">
+            <a href="#dashboard" class="bottom-nav-item active" data-page="dashboard">
+                <i class="ph-fill ph-book-bookmark"></i>
+                <span data-i18n="nav_dashboard">টালি</span>
+            </a>
+            <a href="#cashbox" class="bottom-nav-item" data-page="cashbox">
+                <i class="ph-bold ph-tray"></i>
+                <span data-i18n="nav_cashbox">ক্যাশবক্স</span>
+            </a>
+            <a href="#ledger" class="bottom-nav-item" data-page="ledger">
+                <i class="ph-bold ph-wallet"></i>
+                <span data-i18n="nav_wallet">ওয়ালেট</span>
+            </a>
+            <a href="#more" class="bottom-nav-item"
+                onclick="document.getElementById('hamburgerBtn').click(); return false;">
+                <i class="ph-bold ph-list"></i>
+                <span data-i18n="nav_menu">মেন্যু</span>
+            </a>
+        </nav>
     </div><!-- /app-shell -->
 
-    <!-- ===== FLOATING VOICE BUTTON ===== -->
-    <button class="fab-voice" id="fabVoice" title="Tally Voice Assistant">
-        <div class="fab-pulse"></div>
-        <i class="ph-bold ph-microphone"></i>
-    </button>
+    <!-- ===== FLOATING ACTIONS ===== -->
+    <div class="fab-container">
+        <!-- New Entry FAB (Android Material Style) -->
+        <button class="fab-main" id="fabNewEntry" title="New Entry">
+            <i class="ph-bold ph-plus"></i>
+        </button>
+        <!-- Voice Assistant FAB -->
+        <button class="fab-voice" id="fabVoice" title="Tally Voice Assistant">
+            <div class="fab-pulse"></div>
+            <i class="ph-bold ph-microphone"></i>
+        </button>
+    </div>
 
     <!-- ===== VOICE ASSISTANT OVERLAY ===== -->
     <div class="voice-overlay" id="voiceOverlay">
@@ -394,6 +487,7 @@
             </div>
             <div class="modal-body" id="modalBody"></div>
             <div class="modal-footer" id="modalFooter">
+                <div id="modalFooterExtra"></div>
                 <button class="btn btn-ghost" id="modalCancelBtn" data-i18n="btn_cancel">Cancel</button>
                 <button class="btn btn-primary" id="modalSaveBtn" data-i18n="btn_save">Save</button>
             </div>
@@ -407,9 +501,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="store.js"></script>
-    <script src="voice.js"></script>
-    <script src="app.js"></script>
+    <script src="store.js?v=7"></script>
+    <script src="voice.js?v=7"></script>
+    <script src="app.js?v=7"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>

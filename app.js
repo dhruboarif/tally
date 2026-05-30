@@ -16,10 +16,17 @@ const App = (() => {
         currentPage = page;
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
+
         const el = document.getElementById('page-' + page);
         if (el) el.classList.add('active');
+
         const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
         if (nav) nav.classList.add('active');
+
+        const bNav = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+        if (bNav) bNav.classList.add('active');
+
         closeSidebar();
         refreshPage(page);
     }
@@ -62,27 +69,48 @@ const App = (() => {
     }
 
     // ---- Modal ----
+    // ---- Modal ----
     function openModal(title, bodyHTML, onSave, footerExtra, isReadOnly = false) {
-        document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalBody').innerHTML = bodyHTML;
-        document.getElementById('modalOverlay').classList.add('active');
+        const overlay = document.getElementById('modalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const bodyEl = document.getElementById('modalBody');
         const saveBtn = document.getElementById('modalSaveBtn');
         const cancelBtn = document.getElementById('modalCancelBtn');
+        const closeBtn = document.getElementById('modalCloseBtn');
 
-        saveBtn.classList.toggle('hidden', isReadOnly);
+        titleEl.textContent = title;
+        bodyEl.innerHTML = bodyHTML;
+        overlay.classList.add('active');
+
+        // Reset display
+        saveBtn.style.display = isReadOnly ? 'none' : 'block';
         cancelBtn.textContent = isReadOnly ? (lang === 'bn' ? 'বন্ধ করুন' : 'Close') : t('btn_cancel');
 
-        const newSave = saveBtn.cloneNode(true); saveBtn.parentNode.replaceChild(newSave, saveBtn);
-        newSave.id = 'modalSaveBtn'; newSave.textContent = t('btn_save');
+        // Clear and re-add listeners (safely)
+        const newSave = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSave, saveBtn);
+        newSave.textContent = t('btn_save');
         if (onSave) newSave.addEventListener('click', onSave);
 
+        const newCancel = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+        newCancel.addEventListener('click', closeModal);
+
+        const newClose = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newClose, closeBtn);
+        newClose.addEventListener('click', closeModal);
+
         const footExtra = document.getElementById('modalFooterExtra');
-        if (footExtra) footExtra.innerHTML = '';
-        if (footerExtra && !isReadOnly) {
-            const extra = document.createElement('button'); extra.className = 'btn btn-danger btn-sm';
-            extra.textContent = t('btn_delete'); extra.style.marginRight = 'auto';
-            extra.addEventListener('click', footerExtra);
-            footExtra.appendChild(extra);
+        if (footExtra) {
+            footExtra.innerHTML = '';
+            if (footerExtra && !isReadOnly) {
+                const extra = document.createElement('button');
+                extra.className = 'btn btn-danger btn-sm';
+                extra.textContent = t('btn_delete');
+                extra.style.marginRight = 'auto';
+                extra.addEventListener('click', footerExtra);
+                footExtra.appendChild(extra);
+            }
         }
     }
     function closeModal() {
@@ -134,10 +162,13 @@ const App = (() => {
         else if (page === 'expenses') await refreshExpenses();
         else if (page === 'inventory') await refreshInventory();
         else if (page === 'ledger') await refreshLedger();
+        else if (page === 'cashbox') await refreshCashbox();
     }
 
     async function refreshDashboard(filter = null) {
         let customers = await TallyStore.getCustomers();
+        let suppliers = await TallyStore.getSuppliers();
+
         let searchVal = filter;
         if (searchVal === null) {
             const input = document.getElementById('customerSearchMain');
@@ -150,6 +181,12 @@ const App = (() => {
                 (c.phone && c.phone.includes(f))
             );
         }
+
+        // Update counts
+        const dashCustomerCount = document.getElementById('dashCustomerCount');
+        const dashSupplierCount = document.getElementById('dashSupplierCount');
+        if (dashCustomerCount) dashCustomerCount.textContent = customers.length.toLocaleString('en-IN') || '০';
+        if (dashSupplierCount) dashSupplierCount.textContent = suppliers.length.toLocaleString('en-IN') || '০';
 
         const list = document.getElementById('dashboardCustomerList');
         if (!list) return;
@@ -169,16 +206,27 @@ const App = (() => {
         customers.sort((a, b) => Math.abs(b.due || 0) - Math.abs(a.due || 0)).forEach(c => {
             const card = document.createElement('div');
             card.className = 'entity-card';
+            card.style.border = 'none';
+            card.style.borderBottom = '1px solid var(--border-light)';
+            card.style.borderRadius = '0';
+            card.style.padding = '12px 10px';
+            card.style.boxShadow = 'none';
             card.onclick = () => openCustomerHistoryModal(c);
+
+            const initials = (c.name.split(' ').map(n => n[0]).join('') || '?').substring(0, 2).toUpperCase();
+            // Assign random tint based on name length for avatar
+            const isRec = (c.due >= 0);
+            const amtStr = Math.abs(c.due || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
             card.innerHTML = `
-                <div class="entity-avatar">${c.name.charAt(0)}</div>
-                <div class="entity-info">
-                    <h4>${c.name}</h4>
-                    <p>${c.phone || ''}</p>
+                <div class="entity-avatar" style="background:#E2E8F0; color:#475569; width:44px; height:44px; border-radius:50%; font-size:16px;">${initials}</div>
+                <div class="entity-info" style="margin-left:4px; min-width:0; flex:1;">
+                    <h4 style="font-size:16px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.name}</h4>
+                    <p style="font-size:13px; color:#94A3B8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.phone || (lang === 'bn' ? 'হালনাগাদ নেই' : 'No update')}</p>
                 </div>
-                <div class="entity-due">
-                    <span class="due-label">${lang === 'bn' ? 'বাকি' : 'Due'}</span>
-                    <span class="due-amount ${c.due >= 0 ? 'receivable' : 'payable'}">৳ ${Math.abs(c.due || 0)}</span>
+                <div class="entity-due" style="display:flex; align-items:center; gap:8px;">
+                    <span class="due-amount" style="font-size:18px; font-weight:600; color:${isRec ? 'var(--danger)' : 'var(--success)'};">৳ ${amtStr}</span>
+                    <i class="ph ph-caret-right" style="color:#CBD5E1; font-size:20px;"></i>
                 </div>
             `;
             list.appendChild(card);
@@ -223,19 +271,16 @@ const App = (() => {
         }
 
         const historyHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:var(--bg-secondary); padding:10px; border-radius:8px;">
-                <div>
-                    <h3 style="margin:0;">${freshCustomer.name}</h3>
-                    <small style="font-weight:600; color:${(freshCustomer.due || 0) >= 0 ? 'var(--danger)' : 'var(--success)'};">
-                        ${lang === 'bn' ? 'মোট বাকি: ' : 'Total Due: '} ৳${Math.abs(freshCustomer.due || 0)}
-                    </small>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:700; font-size:1.15rem; color:${(freshCustomer.due || 0) >= 0 ? 'var(--danger)' : 'var(--success)'};">
+                    ${lang === 'bn' ? ((freshCustomer.due || 0) >= 0 ? 'পাবো ৳ ' : 'দিবো ৳ ') : 'Due ৳ '}${Math.abs(freshCustomer.due || 0).toLocaleString('en-IN')}
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-secondary btn-sm" onclick="App.generateCustomerStatement('${freshCustomer.name}')" title="${lang === 'bn' ? 'রিপোর্ট' : 'Report'}">
+                    <button class="btn btn-secondary btn-sm" onclick="App.generateCustomerStatement('${freshCustomer.name}')" title="${lang === 'bn' ? 'রিপোর্ট' : 'Report'}" style="padding: 6px 12px; background:#f8fafc; border:none;">
                         <i class="ph ph-file-text"></i> ${lang === 'bn' ? 'স্টেটমেন্ট' : 'Statement'}
                     </button>
                     <div class="dropdown">
-                        <button class="btn btn-secondary btn-sm" onclick="this.nextElementSibling.classList.toggle('show')">
+                        <button class="btn btn-secondary btn-sm" onclick="this.nextElementSibling.classList.toggle('show')" style="padding: 6px 10px; background:#f8fafc; border:none;">
                             <i class="ph ph-dots-three-vertical"></i>
                         </button>
                         <div class="dropdown-content" style="right:0; min-width:150px;">
@@ -247,18 +292,43 @@ const App = (() => {
                 </div>
             </div>
 
-            <div class="entry-form" style="background:var(--bg-page); padding:15px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border-color);">
-                <div style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary); margin-bottom:10px;">
-                    ${lang === 'bn' ? '➕ নতুন এন্ট্রি' : '➕ New Entry'}
+            <div style="margin-bottom:24px; margin-top:8px;">
+                <div style="display:flex; gap:12px; margin-bottom:16px;">
+                    <div style="flex:1; position:relative; border:2px solid var(--danger); border-radius:8px; padding:12px 14px; background:white;">
+                        <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--danger); font-weight:500;">
+                            ${lang === 'bn' ? 'দিলাম/বেচা' : 'Gave/Sale'}
+                        </label>
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-size:18px; font-weight:700; color:var(--text); margin-right:4px;">৳</span>
+                            <input type="number" id="f_pay_gave" placeholder="" style="border:none; outline:none; background:transparent; font-size:18px; font-weight:700; color:var(--text); width:100%;">
+                        </div>
+                    </div>
+                    <div style="flex:1; position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white;">
+                        <div style="display:flex; align-items:center; height:100%;">
+                            <span style="font-size:18px; font-weight:700; color:#cbd5e1; margin-right:4px;">৳</span>
+                            <input type="number" id="f_pay_recv" placeholder="${lang === 'bn' ? 'পেলাম' : 'Received'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-row" style="display:flex; gap:10px; margin-bottom:10px;">
-                    <div class="form-group" style="flex:1;"><label><strong>${lang === 'bn' ? 'আমি দিলাম' : 'I Gave'}</strong></label>
-                    <input type="number" id="f_pay_gave" placeholder="0.00" style="color:var(--danger); font-weight:bold;"></div>
-                    <div class="form-group" style="flex:1;"><label><strong>${lang === 'bn' ? 'সে দিল' : 'He Gave'}</strong></label>
-                    <input type="number" id="f_pay_recv" placeholder="0.00" style="color:var(--success); font-weight:bold;"></div>
+                
+                <div style="position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center;">
+                        <i class="ph ph-note-pencil" style="font-size:20px; color:var(--text-muted); margin-right:8px;"></i>
+                        <input type="text" id="f_pay_desc" placeholder="${lang === 'bn' ? 'বিবরণ' : 'Description'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                    </div>
                 </div>
-                <div class="form-group"><label>${lang === 'bn' ? 'বিবরণ' : 'Note'}</label>
-                <input type="text" id="f_pay_desc" placeholder="${lang === 'bn' ? 'বিবরণ লিখুন' : 'Enter details'}"></div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button class="btn btn-secondary btn-sm" style="background:#f1f5f9; border:none; border-radius:20px; padding:6px 14px; color:var(--text-secondary); font-size:13px;" onclick="document.getElementById('f_pay_date').showPicker && document.getElementById('f_pay_date').showPicker()">
+                        <i class="ph ph-calendar-blank" style="margin-right:4px;"></i> 
+                        ${new Date().toLocaleDateString(lang === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short' })}
+                        <input type="date" id="f_pay_date" style="position:absolute; opacity:0; width:0; height:0;">
+                    </button>
+                    
+                    <button class="btn btn-secondary btn-sm" style="background:#f1f5f9; border:none; border-radius:20px; padding:6px 14px; color:var(--text-secondary); font-size:13px;" onclick="toast('ছবি সংযুক্তকরণ শীঘ্রই আসছে!')">
+                        <i class="ph ph-camera" style="margin-right:4px;"></i> ${lang === 'bn' ? 'ছবি' : 'Photo'}
+                    </button>
+                </div>
             </div>
 
             <div style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary); margin-bottom:8px;">
@@ -301,6 +371,12 @@ const App = (() => {
             closeModal();
             refreshDashboard();
         });
+
+        // Auto-focus the "দিলাম/বেচা" input
+        setTimeout(() => {
+            const gaveInput = document.getElementById('f_pay_gave');
+            if (gaveInput) gaveInput.focus();
+        }, 300);
     }
 
     async function editTransaction(txId, customerId) {
@@ -379,6 +455,41 @@ const App = (() => {
             closeModal();
             refreshDashboard();
         }
+    }
+
+    async function refreshCashbox() {
+        const txns = await TallyStore.getTransactions();
+        const now = new Date().toISOString().split('T')[0];
+        const todayTxns = txns.filter(t => t.date && t.date.startsWith(now));
+
+        let cashIn = 0;
+        let cashOut = 0;
+
+        todayTxns.forEach(t => {
+            const amt = parseFloat(t.amount) || 0;
+            // Cash in logic (simplified: sales/services/payments in)
+            if (['sale', 'service', 'payment_in', 'mfs_in'].includes(t.type)) {
+                cashIn += amt;
+            } else if (['purchase', 'expense', 'payment_out', 'mfs_out'].includes(t.type)) {
+                cashOut += amt;
+            }
+        });
+
+        // Calculate current total balance from all transaction history (simplified)
+        let totalBalance = 0;
+        txns.forEach(t => {
+            const amt = parseFloat(t.amount) || 0;
+            if (['sale', 'service', 'payment_in', 'mfs_in'].includes(t.type)) totalBalance += amt;
+            else totalBalance -= amt;
+        });
+
+        const elIn = document.getElementById('cashboxIn');
+        const elOut = document.getElementById('cashboxOut');
+        const elBal = document.getElementById('cashboxBalance');
+
+        if (elIn) elIn.textContent = fmt(cashIn);
+        if (elOut) elOut.textContent = fmt(cashOut);
+        if (elBal) elBal.textContent = fmt(totalBalance);
     }
 
     async function refreshCustomers(filter = '') {
@@ -532,47 +643,109 @@ const App = (() => {
 
     // ---- SIMPLE NEW ENTRY MODAL ----
     function openNewTransactionModal() {
-        openModal(lang === 'bn' ? 'নতুন এন্ট্রি' : 'New Due Entry',
-            `<div class="form-group"><label>${lang === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name'}</label>
-            <input id="f_tname" placeholder="${lang === 'bn' ? 'কাস্টমারের নাম' : 'Name'}"></div>
-            <div class="form-row">
-                <div class="form-group"><label>${lang === 'bn' ? 'আমি দিলাম (দিলাম)' : 'I Gave (Gave)'}</label>
-                <input id="f_tgave" type="number" placeholder="0.00" style="color:var(--danger); font-weight:bold;"></div>
-                <div class="form-group"><label>${lang === 'bn' ? 'সে দিল (পেলাম)' : 'He Gave (Recv)'}</label>
-                <input id="f_trecv" type="number" placeholder="0.00" style="color:var(--success); font-weight:bold;"></div>
+        const today = new Date();
+        const dateStr = lang === 'bn' ? today.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' }) : today.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+        const bodyHTML = `
+            <div style="margin-bottom:15px; position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white;">
+                <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--text-secondary); font-weight:500;">
+                    ${lang === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name'}
+                </label>
+                <div style="display:flex; align-items:center;">
+                    <i class="ph ph-user" style="font-size:20px; color:var(--text-muted); margin-right:8px;"></i>
+                    <input type="text" id="f_tname" placeholder="${lang === 'bn' ? 'নাম লিখুন' : 'Enter Name'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                    <button type="button" id="btnSelectContact" style="border:none; background:none; color:var(--primary); cursor:pointer; padding:4px;">
+                        <i class="ph ph-address-book" style="font-size:24px;"></i>
+                    </button>
+                </div>
             </div>
-            <div class="form-group"><label>${lang === 'bn' ? 'বিবরণ (কিসের জন্য)' : 'Description (For what?)'}</label>
-            <input id="f_tdesc" placeholder="${lang === 'bn' ? 'ফটোকপি, প্রিন্টিং ইত্যাদি' : 'e.g. Photocopy'}"></div>`,
-            async () => {
-                const name = document.getElementById('f_tname').value.trim();
-                const gave = parseFloat(document.getElementById('f_tgave').value) || 0;
-                const recv = parseFloat(document.getElementById('f_trecv').value) || 0;
-                const desc = document.getElementById('f_tdesc').value.trim();
 
-                if (!name || (gave === 0 && recv === 0)) {
-                    toast(lang === 'bn' ? 'নাম ও অন্তত একটি পরিমাণ দিন' : 'Name and amount required', 'error');
-                    return;
-                }
+            <div style="display:flex; gap:12px; margin-bottom:16px;">
+                <div style="flex:1; position:relative; border:2px solid var(--danger); border-radius:8px; padding:12px 14px; background:white;">
+                    <label style="position:absolute; top:-10px; left:12px; background:white; padding:0 4px; font-size:12px; color:var(--danger); font-weight:500;">
+                        ${lang === 'bn' ? 'দিলাম/বেচা' : 'Gave/Sale'}
+                    </label>
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:18px; font-weight:700; color:var(--text); margin-right:4px;">৳</span>
+                        <input type="number" id="f_tgave" placeholder="" style="border:none; outline:none; background:transparent; font-size:18px; font-weight:700; color:var(--text); width:100%;">
+                    </div>
+                </div>
+                <div style="flex:1; position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white;">
+                    <div style="display:flex; align-items:center; height:100%;">
+                        <span style="font-size:18px; font-weight:700; color:#cbd5e1; margin-right:4px;">৳</span>
+                        <input type="number" id="f_trecv" placeholder="${lang === 'bn' ? 'পেলাম' : 'Received'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="position:relative; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; background:white; margin-bottom:16px;">
+                <div style="display:flex; align-items:center;">
+                    <i class="ph ph-note-pencil" style="font-size:20px; color:var(--text-muted); margin-right:8px;"></i>
+                    <input type="text" id="f_tdesc" placeholder="${lang === 'bn' ? 'বিবরণ' : 'Description'}" style="border:none; outline:none; background:transparent; font-size:16px; color:var(--text); width:100%;">
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn btn-secondary btn-sm" style="background:#f1f5f9; border:none; border-radius:20px; padding:6px 14px; color:var(--text-secondary); font-size:13px;" onclick="const dp = document.getElementById('f_tdate'); if(dp.showPicker) dp.showPicker(); else dp.click();">
+                    <i class="ph ph-calendar"></i> ${dateStr}
+                    <input type="date" id="f_tdate" style="position:absolute; opacity:0; width:0; pointer-events:none;">
+                </button>
+                <button class="btn btn-secondary btn-sm" style="background:#f1f5f9; border:none; border-radius:20px; padding:6px 14px; color:var(--text-secondary); font-size:13px;" onclick="toast(lang === 'bn' ? 'ছবি আপলোড শীঘ্রই আসছে' : 'Image upload coming soon')">
+                    <i class="ph ph-camera"></i> ${lang === 'bn' ? 'ছবি' : 'Photo'}
+                </button>
+            </div>
+        `;
 
-                if (gave > 0) {
-                    const txGave = { type: 'sale', entityName: name, amount: gave, category: desc, date: new Date().toISOString() };
-                    await TallyStore.addTransaction(txGave);
-                }
-                if (recv > 0) {
-                    const txRecv = { type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: new Date().toISOString() };
-                    await TallyStore.addTransaction(txRecv);
-                }
+        openModal(lang === 'bn' ? 'নতুন এন্ট্রি' : 'New Entry', bodyHTML, async () => {
+            const name = document.getElementById('f_tname').value.trim();
+            const gave = parseFloat(document.getElementById('f_tgave').value) || 0;
+            const recv = parseFloat(document.getElementById('f_trecv').value) || 0;
+            const desc = document.getElementById('f_tdesc').value.trim();
+            const dateVal = document.getElementById('f_tdate').value || new Date().toISOString();
 
-                // Update customer total due
-                const customer = await TallyStore.findOrCreateCustomer(name);
-                customer.due = (parseFloat(customer.due) || 0) + (gave - recv);
-                await TallyStore.updateCustomer(customer);
-
-                toast(lang === 'bn' ? 'এন্ট্রি সেভ হয়েছে' : 'Entry saved!');
-                closeModal();
-                refreshDashboard();
+            if (!name || (gave === 0 && recv === 0)) {
+                toast(lang === 'bn' ? 'নাম ও অন্তত একটি পরিমাণ দিন' : 'Name and amount required', 'error');
+                return;
             }
-        );
+
+            if (gave > 0) {
+                await TallyStore.addTransaction({ type: 'sale', entityName: name, amount: gave, category: desc, date: dateVal });
+            }
+            if (recv > 0) {
+                await TallyStore.addTransaction({ type: 'payment_in', entityName: name, amount: recv, category: desc || (lang === 'bn' ? 'টাকা ফেরত' : 'Payment'), date: dateVal });
+            }
+
+            const customer = await TallyStore.findOrCreateCustomer(name);
+            customer.due = (parseFloat(customer.due) || 0) + (gave - recv);
+            await TallyStore.updateCustomer(customer);
+
+            toast(lang === 'bn' ? 'হিসাব সেভ হয়েছে' : 'Entry saved!');
+            closeModal();
+            refreshDashboard();
+        });
+
+        setTimeout(() => {
+            const nameInput = document.getElementById('f_tname');
+            if (nameInput) nameInput.focus();
+
+            const contactBtn = document.getElementById('btnSelectContact');
+            if (contactBtn) {
+                contactBtn.addEventListener('click', async () => {
+                    if ('contacts' in navigator) {
+                        try {
+                            const contacts = await navigator.contacts.select(['name'], { multiple: false });
+                            if (contacts && contacts.length > 0) {
+                                nameInput.value = contacts[0].name[0];
+                            }
+                        } catch (err) {
+                            console.warn('Contact Picker cancelled or failed:', err);
+                        }
+                    } else {
+                        toast(lang === 'bn' ? 'কন্টাক্ট লিস্ট সাপোর্ট করছে না' : 'Contact Picker not supported', 'info');
+                    }
+                });
+            }
+        }, 300);
     }
 
     function quickAddCustomer(name) {
@@ -817,47 +990,87 @@ const App = (() => {
         await TallyStore.seedDemoData();
         applyI18n();
 
+        // Topbar Dropdown Toggle
+        const brandNameMobile = document.querySelector('.brand-name-mobile');
+        const dropdownContent = document.querySelector('.dropdown-content');
+        if (brandNameMobile && dropdownContent) {
+            brandNameMobile.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.dropdown')) dropdownContent.classList.remove('show');
+            });
+        }
+
+        // Realtime Subscription
+        TallyStore.subscribeCustomers(() => {
+            if (currentPage === 'dashboard') refreshDashboard();
+            if (currentPage === 'customers') refreshCustomers();
+        });
+
         // Events
         document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', e => { e.preventDefault(); navigateTo(n.dataset.page); }));
-        document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
+        document.querySelectorAll('.bottom-nav-item').forEach(n => n.addEventListener('click', e => { e.preventDefault(); navigateTo(n.dataset.page); }));
+
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        if (hamburgerBtn) hamburgerBtn.addEventListener('click', openSidebar);
+
         document.getElementById('sidebarCloseBtn').addEventListener('click', closeSidebar);
         document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
-        document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-        document.getElementById('langToggleBtn').addEventListener('click', toggleLang);
-        document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
-        document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-        document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
-        document.getElementById('fabVoice').addEventListener('click', openVoiceAssistant);
-        document.getElementById('voiceCloseBtn').addEventListener('click', closeVoiceOverlay);
-        document.getElementById('voiceOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeVoiceOverlay(); });
-        document.getElementById('newTxBtnTop').addEventListener('click', () => openNewTransactionModal());
-        document.getElementById('customerSearchMain').addEventListener('input', e => refreshDashboard(e.target.value));
-        document.getElementById('addCustomerBtn').addEventListener('click', () => openCustomerModal(null));
-        document.getElementById('addSupplierBtn').addEventListener('click', () => openSupplierModal(null));
-        document.getElementById('addServiceBtn').addEventListener('click', () => openNewTransactionModal({ type: 'service' }));
-        document.getElementById('addBkashBtn').addEventListener('click', () => openNewTransactionModal({ type: 'mfs_in' }));
-        document.getElementById('addExpenseBtn').addEventListener('click', () => openNewTransactionModal({ type: 'expense' }));
-        document.getElementById('addProductBtn').addEventListener('click', () => openProductModal(null));
-        document.getElementById('viewAllTxBtn') && document.getElementById('viewAllTxBtn').addEventListener('click', () => navigateTo('ledger'));
-        document.getElementById('customerSearch').addEventListener('input', e => refreshCustomers(e.target.value));
-        document.getElementById('supplierSearch').addEventListener('input', e => refreshSuppliers(e.target.value));
-        document.getElementById('ledgerEntityFilter').addEventListener('change', () => refreshLedger());
-        document.getElementById('ledgerDateFrom').addEventListener('change', () => refreshLedger());
-        document.getElementById('ledgerDateTo').addEventListener('change', () => refreshLedger());
-        document.getElementById('globalSearch').addEventListener('keydown', e => { if (e.key === 'Enter') globalSearch(e.target.value); });
+        // Safe Listeners helper
+        const listen = (id, event, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, fn);
+        };
+
+        listen('themeToggleBtn', 'click', toggleTheme);
+        listen('langToggleBtn', 'click', toggleLang);
+
+        // Modal global listeners (for backup)
+        listen('modalOverlay', 'click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+        const fabVoice = document.getElementById('fabVoice');
+        if (fabVoice) fabVoice.addEventListener('click', openVoiceAssistant);
+        listen('fabNewEntry', 'click', () => openNewTransactionModal());
+
+        listen('voiceCloseBtn', 'click', closeVoiceOverlay);
+        listen('voiceOverlay', 'click', e => { if (e.target === e.currentTarget) closeVoiceOverlay(); });
+
+        listen('newTxBtnTop', 'click', () => openNewTransactionModal());
+        listen('newTxBtnCashbox', 'click', () => openNewTransactionModal());
+        listen('newTxBtnHome', 'click', () => openNewTransactionModal());
+        listen('customerSearchMain', 'input', e => refreshDashboard(e.target.value));
+        listen('addCustomerBtn', 'click', () => openCustomerModal(null));
+        listen('addSupplierBtn', 'click', () => openSupplierModal(null));
+        listen('addServiceBtn', 'click', () => openNewTransactionModal({ type: 'service' }));
+        listen('addBkashBtn', 'click', () => openNewTransactionModal({ type: 'mfs_in' }));
+        listen('addExpenseBtn', 'click', () => openNewTransactionModal({ type: 'expense' }));
+        listen('addProductBtn', 'click', () => openProductModal(null));
+        listen('viewAllTxBtn', 'click', () => navigateTo('ledger'));
+        listen('customerSearch', 'input', e => refreshCustomers(e.target.value));
+        listen('supplierSearch', 'input', e => refreshSuppliers(e.target.value));
+        listen('ledgerEntityFilter', 'change', () => refreshLedger());
+        listen('ledgerDateFrom', 'change', () => refreshLedger());
+        listen('ledgerDateTo', 'change', () => refreshLedger());
+
+        const globalSearch = document.getElementById('globalSearch');
+        if (globalSearch) globalSearch.addEventListener('keydown', e => { if (e.key === 'Enter') globalSearchApi(e.target.value); });
+
         document.querySelectorAll('.report-card').forEach(c => c.addEventListener('click', () => generateReport(c.dataset.report)));
-        const expBtn = document.getElementById('exportReportBtn');
-        if (expBtn) expBtn.addEventListener('click', exportCSV);
+        listen('exportReportBtn', 'click', exportCSV);
 
         // Hash routing
-        const hash = location.hash.replace('#', ''); if (hash) navigateTo(hash);
+        const hash = location.hash.replace('#', '');
+        if (hash) {
+            navigateTo(hash);
+        } else {
+            navigateTo(currentPage);
+        }
         window.addEventListener('hashchange', () => { const h = location.hash.replace('#', ''); if (h) navigateTo(h); });
 
         // Chart resize
         window.addEventListener('resize', () => { if (currentPage === 'dashboard') TallyStore.getLast7DaysCashFlow().then(drawCashFlowChart); });
-
-        // Initial render
-        setTimeout(() => navigateTo(currentPage), 300);
     }
 
     document.addEventListener('DOMContentLoaded', init);

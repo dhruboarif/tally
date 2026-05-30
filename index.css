@@ -5,15 +5,15 @@
 
 /* ---------- CSS CUSTOM PROPERTIES (DESIGN TOKENS) ---------- */
 :root {
-    /* Core palette */
-    --hue-primary: 243;
-    --primary: hsl(var(--hue-primary), 75%, 59%);
-    --primary-hover: hsl(var(--hue-primary), 75%, 50%);
-    --primary-light: hsl(var(--hue-primary), 80%, 95%);
-    --primary-subtle: hsl(var(--hue-primary), 60%, 97%);
+    /* Core palette: Tally Khata Red Theme */
+    --hue-primary: 353;
+    --primary: #C1121F;
+    --primary-hover: #A00F1A;
+    --primary-light: #FEE2E2;
+    --primary-subtle: #FEF2F2;
 
-    --accent: hsl(270, 70%, 60%);
-    --accent-glow: hsla(270, 90%, 60%, 0.35);
+    --accent: #E5383B;
+    --accent-glow: rgba(193, 18, 31, 0.35);
 
     /* Semantic */
     --success: #10B981;
@@ -68,11 +68,11 @@
     --font-bn: 'Noto Sans Bengali', 'Inter', sans-serif;
 
     /* Gradient presets */
-    --grad-sales: linear-gradient(135deg, #F97316, #EA580C);
-    --grad-purchases: linear-gradient(135deg, #3B82F6, #2563EB);
-    --grad-receivable: linear-gradient(135deg, #8B5CF6, #7C3AED);
-    --grad-cash: linear-gradient(135deg, #10B981, #059669);
-    --grad-voice: linear-gradient(135deg, hsl(var(--hue-primary), 75%, 59%), hsl(270, 70%, 60%));
+    --grad-sales: linear-gradient(135deg, #10B981, #059669);
+    --grad-purchases: linear-gradient(135deg, #F59E0B, #D97706);
+    --grad-receivable: linear-gradient(135deg, #EF4444, #B91C1C);
+    --grad-cash: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    --grad-voice: linear-gradient(135deg, #C1121F, #E5383B);
 }
 
 /* ---------- DARK MODE ---------- */
@@ -175,19 +175,20 @@ h6 {
     height: 100vh;
     width: 100vw;
     overflow: hidden;
+    /* Force mobile app view on desktop */
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    background: white;
+    /* This makes fixed elements bound to the box instead of the viewport */
+    transform: translateZ(0);
+    border: 1px solid var(--border-light);
 }
 
 /* ---------- SIDEBAR ---------- */
 .sidebar {
-    width: var(--sidebar-w);
-    min-width: var(--sidebar-w);
-    background: var(--surface);
-    border-right: 1px solid var(--border-light);
-    display: flex;
-    flex-direction: column;
-    padding: 28px 20px 20px;
-    z-index: 60;
-    transition: transform var(--t-slow) var(--ease);
+    display: none !important;
 }
 
 .sidebar-brand {
@@ -322,15 +323,19 @@ h6 {
 
 /* ---------- TOP BAR ---------- */
 .topbar {
-    height: var(--topbar-h);
-    min-height: var(--topbar-h);
+    height: 110px;
+    /* Taller for the dropdown & actions */
+    min-height: 110px;
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 32px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border-light);
+    align-items: flex-start;
+    /* Align top for double row feel */
+    justify-content: space-between;
+    padding: 16px 20px 48px;
+    /* Leave space at bottom for overlap */
+    background: var(--primary);
+    border-bottom: none;
     z-index: 40;
+    color: white;
 }
 
 .hamburger {
@@ -429,9 +434,13 @@ h6 {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 32px;
+    padding: 24px;
     background: var(--bg-page);
     scroll-behavior: smooth;
+    position: relative;
+    z-index: 50;
+    /* OVERLAPPING EFFECT (Desktop vs Mobile adjusted in media query) */
+    border-top-left-radius: var(--radius-xl);
 }
 
 /* ---------- PAGE SECTIONS ---------- */
@@ -930,24 +939,29 @@ h6 {
     gap: 6px;
 }
 
-.entity-action-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: var(--text-secondary);
-    transition: all var(--t-fast);
+.entity-chevron {
+    color: var(--text-muted);
+    font-size: 18px;
+    margin-left: 8px;
 }
 
-.entity-action-btn:hover {
-    background: var(--primary-light);
-    color: var(--primary);
-    border-color: var(--primary);
+/* Redesigned Search inline for native feel */
+.search-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 12px 20px;
+    border-radius: var(--radius-full);
+    flex: 1;
+    margin-bottom: 24px;
+    max-width: 100%;
+}
+
+.search-inline input {
+    font-size: 15px;
 }
 
 /* ---------- TABLES ---------- */
@@ -1491,9 +1505,20 @@ h6 {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 12px;
     padding: 16px 28px 22px;
     border-top: 1px solid var(--border-light);
+}
+
+.modal-footer .btn {
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    min-width: 120px;
+    cursor: pointer;
+    position: relative;
+    z-index: 200;
 }
 
 /* Modal Form Fields */
@@ -1641,16 +1666,53 @@ h6 {
     background: var(--text-muted);
 }
 
-/* ---------- RESPONSIVE ---------- */
-@media (max-width: 900px) {
+/* ---------- RESPONSIVE / NATIVE ANDROID FEEL ---------- */
+@media (max-width: 9000px) {
+
+    /* Completely hide sidebar on mobile (using bottom nav instead) */
     .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        transform: translateX(-100%);
-        z-index: 60;
-        box-shadow: var(--shadow-xl);
+        display: none !important;
+    }
+
+    .main-area {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .topbar {
+        padding: 16px 20px 48px;
+        height: 110px;
+        min-height: 110px;
+        background: var(--primary);
+        box-shadow: none;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .page-scroll {
+        margin-top: -32px;
+        /* Overlap effect only on mobile */
+        border-top-right-radius: var(--radius-xl);
+        padding-bottom: 90px;
+        /* Space for bottom nav */
+    }
+
+    .topbar-icon-btn,
+    .topbar-icon-btn i {
+        color: rgba(255, 255, 255, 0.9);
+        border: none;
+        background: transparent;
+    }
+
+    .topbar-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .brand-name-mobile {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
     }
 
     .sidebar.open {
@@ -1701,12 +1763,101 @@ h6 {
         font-size: 22px;
     }
 
+    /* Floating Action Buttons */
+    .fab-container {
+        position: fixed;
+        bottom: 84px;
+        /* Above bottom nav */
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 90;
+    }
+
+    .fab-main,
     .fab-voice {
-        bottom: 24px;
-        right: 24px;
-        width: 62px;
-        height: 62px;
-        font-size: 26px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        color: white;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .fab-main {
+        background: var(--primary);
+    }
+
+    .fab-voice {
+        background: var(--grad-sales);
+    }
+
+    .fab-main:active,
+    .fab-voice:active {
+        transform: scale(0.9);
+    }
+
+    .fab-pulse {
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 2px solid var(--warning);
+        animation: fabPulse 2s ease-out infinite;
+        pointer-events: none;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: var(--surface);
+        border-top: 1px solid var(--border-light);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        gap: 4px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color var(--t-fast);
+        padding: 5px 0;
+    }
+
+    .bottom-nav-item i {
+        font-size: 24px;
+        transition: transform var(--t-fast);
+    }
+
+    .bottom-nav-item span {
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .bottom-nav-item.active {
+        color: var(--primary);
+    }
+
+    .bottom-nav-item.active i {
+        transform: translateY(-2px);
     }
 }
 

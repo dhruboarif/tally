@@ -78,6 +78,13 @@ const TallyStore = (() => {
 
     // ---- Customers ----
     async function getCustomers() { return getAll(COLS.customers); }
+    function subscribeCustomers(callback) {
+        if (!db) return () => { };
+        return db.collection(COLS.customers).onSnapshot(snapshot => {
+            const arr = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            callback(arr);
+        });
+    }
     async function addCustomer(c) { return add(COLS.customers, c); }
     async function updateCustomer(c) { return put(COLS.customers, c); }
     async function deleteCustomer(id) { return remove(COLS.customers, id); }
@@ -220,7 +227,7 @@ const TallyStore = (() => {
     return {
         init, generateId,
         // Customers
-        getCustomers, addCustomer, updateCustomer, deleteCustomer, findOrCreateCustomer,
+        getCustomers, subscribeCustomers, addCustomer, updateCustomer, deleteCustomer, findOrCreateCustomer,
         // Suppliers
         getSuppliers, addSupplier, updateSupplier, deleteSupplier, findOrCreateSupplier,
         // Transactions
