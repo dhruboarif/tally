@@ -1204,8 +1204,8 @@ h6 {
 /* ---------- FLOATING VOICE BUTTON ---------- */
 .fab-voice {
     position: fixed;
-    bottom: 32px;
-    right: 32px;
+    bottom: 120px;
+    right: 28px;
     width: 68px;
     height: 68px;
     border-radius: 50%;

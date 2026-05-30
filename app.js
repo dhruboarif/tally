@@ -2,8 +2,8 @@
 const App = (() => {
     // i18n translations
     const i18n = {
-        en: { nav_dashboard: 'Due Tracker', nav_customers: 'Customers', btn_new_entry: 'New Entry', search_placeholder: 'Search name...', kpi_total_due: 'Total Due', dashboard_subtitle_simple: 'Track who owes you and who you owe.', btn_save: 'Save', btn_cancel: 'Cancel' },
-        bn: { nav_dashboard: 'বাকিখাতা', nav_customers: 'কাস্টমার', btn_new_entry: 'নতুন এন্ট্রি', search_placeholder: 'নাম খুঁজুন...', kpi_total_due: 'মোট পাওনা', dashboard_subtitle_simple: 'কার কাছে কত পাওনা তার হিসাব রাখুন সহজে।', btn_save: 'সেভ করুন', btn_cancel: 'বাতিল' }
+        en: { nav_dashboard: 'Due Tracker', nav_customers: 'Customers', btn_new_entry: 'New Entry', search_placeholder: 'Search name...', kpi_total_due: 'Total Due', dashboard_subtitle_simple: 'Track who owes you and who you owe.', btn_save: 'Save', btn_cancel: 'Cancel', btn_delete: 'Delete' },
+        bn: { nav_dashboard: 'বাকিখাতা', nav_customers: 'কাস্টমার', btn_new_entry: 'নতুন এন্ট্রি', search_placeholder: 'নাম খুঁজুন...', kpi_total_due: 'মোট পাওনা', dashboard_subtitle_simple: 'কার কাছে কত পাওনা তার হিসাব রাখুন সহজে।', btn_save: 'সেভ করুন', btn_cancel: 'বাতিল', btn_delete: 'ডিলিট' }
     };
     let lang = 'en';
 
@@ -29,6 +29,39 @@ const App = (() => {
 
         closeSidebar();
         refreshPage(page);
+    }
+
+    function openSecuritySettings() {
+        checkSecurity(() => {
+            const currentPass = localStorage.getItem('tally_pass');
+            openModal(lang === 'bn' ? 'সিকিউরিটি সেটিংস' : 'Security Settings', `
+                <div class="form-group">
+                    <label>${lang === 'bn' ? 'নতুন পাসওয়ার্ড সেট করুন' : 'Set New Password'}</label>
+                    <input type="password" id="f_new_pass" placeholder="পাসওয়ার্ড দিন" value="${currentPass || ''}" style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px;">
+                </div>
+                <p style="font-size:12px; color:var(--text-secondary); line-height:1.4;">${lang === 'bn' ? 'এখানে পাসওয়ার্ড সেট থাকলে ডিলিট বা এন্ট্রি এডিট করার সময় পাসওয়ার্ড প্রয়োজন হবে। খালি রাখলে কোনো পাসওয়ার্ড চাইবে না।' : 'Setting a password will require it for delete or edit actions. Leave blank for no security.'}</p>
+            `, () => {
+                const pass = document.getElementById('f_new_pass').value.trim();
+                localStorage.setItem('tally_pass', pass);
+                toast(pass ? (lang === 'bn' ? 'পাসওয়ার্ড সেট করা হয়েছে' : 'Password set!') : (lang === 'bn' ? 'পাসওয়ার্ড মুছে ফেলা হয়েছে' : 'Password removed!'));
+                closeModal();
+            });
+        });
+    }
+
+    function checkSecurity(onSuccess) {
+        const savedPass = localStorage.getItem('tally_pass');
+        if (!savedPass) {
+            onSuccess();
+            return;
+        }
+
+        const input = prompt(lang === 'bn' ? 'সুরক্ষার জন্য পাসওয়ার্ড দিন:' : 'Enter password to continue:');
+        if (input === savedPass) {
+            onSuccess();
+        } else if (input !== null) {
+            toast(lang === 'bn' ? 'ভুল পাসওয়ার্ড!' : 'Wrong password!', 'error');
+        }
     }
 
     // ---- Sidebar ----
@@ -90,7 +123,26 @@ const App = (() => {
         const newSave = saveBtn.cloneNode(true);
         saveBtn.parentNode.replaceChild(newSave, saveBtn);
         newSave.textContent = t('btn_save');
-        if (onSave) newSave.addEventListener('click', onSave);
+        if (onSave) {
+            newSave.addEventListener('click', async () => {
+                const needsPass = (title === 'এন্ট্রি এডিট' || title === 'Edit Entry'); // Protect edit specifically
+                const action = async () => {
+                    if (newSave.getAttribute('data-loading') === 'true') return;
+                    newSave.setAttribute('data-loading', 'true');
+                    newSave.style.opacity = '0.7';
+                    try {
+                        await onSave();
+                    } catch (e) {
+                        console.error(e);
+                        newSave.removeAttribute('data-loading');
+                        newSave.style.opacity = '1';
+                    }
+                };
+
+                if (needsPass) checkSecurity(action);
+                else action();
+            });
+        }
 
         const newCancel = cancelBtn.cloneNode(true);
         cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
@@ -105,10 +157,12 @@ const App = (() => {
             footExtra.innerHTML = '';
             if (footerExtra && !isReadOnly) {
                 const extra = document.createElement('button');
-                extra.className = 'btn btn-danger btn-sm';
+                extra.className = 'btn btn-danger';
                 extra.textContent = t('btn_delete');
                 extra.style.marginRight = 'auto';
-                extra.addEventListener('click', footerExtra);
+                extra.style.padding = '12px 18px';
+                extra.style.fontSize = '14px';
+                extra.addEventListener('click', () => checkSecurity(footerExtra));
                 footExtra.appendChild(extra);
             }
         }
@@ -1074,5 +1128,5 @@ const App = (() => {
     }
 
     document.addEventListener('DOMContentLoaded', init);
-    return { navigateTo, toast, openNewTransactionModal, generateCustomerStatement, downloadCustomerStatement, shareCustomerStatement, quickAddCustomer, confirmDeleteCustomer, editTransaction, exportBackup: () => TallyStore.exportAllData() };
+    return { navigateTo, toast, openNewTransactionModal, openSecuritySettings, generateCustomerStatement, downloadCustomerStatement, shareCustomerStatement, quickAddCustomer, confirmDeleteCustomer, editTransaction, exportBackup: () => TallyStore.exportAllData() };
 })();

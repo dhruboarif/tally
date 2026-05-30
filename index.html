@@ -23,7 +23,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
-    <link rel="stylesheet" href="index.css?v=7">
+    <link rel="stylesheet" href="index.css?v=11">
 </head>
 
 <body>
@@ -76,6 +76,8 @@
                         </span>
                         <div class="dropdown-content">
                             <a href="#"><i class="ph ph-storefront"></i> Dhrubo Computers</a>
+                            <a href="#" onclick="App.openSecuritySettings(); return false;"><i class="ph ph-lock"></i>
+                                পাসওয়ার্ড সেট করুন</a>
                             <a href="#"><i class="ph ph-gear"></i> Settings</a>
                         </div>
                     </div>
@@ -437,10 +439,9 @@
                 <i class="ph-bold ph-wallet"></i>
                 <span data-i18n="nav_wallet">ওয়ালেট</span>
             </a>
-            <a href="#more" class="bottom-nav-item"
-                onclick="document.getElementById('hamburgerBtn').click(); return false;">
-                <i class="ph-bold ph-list"></i>
-                <span data-i18n="nav_menu">মেন্যু</span>
+            <a href="#security" class="bottom-nav-item" onclick="App.openSecuritySettings(); return false;">
+                <i class="ph-bold ph-shield-check"></i>
+                <span>সিকিউরিটি</span>
             </a>
         </nav>
     </div><!-- /app-shell -->
@@ -501,9 +502,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <script src="store.js?v=7"></script>
-    <script src="voice.js?v=7"></script>
-    <script src="app.js?v=7"></script>
+    <script src="store.js?v=11"></script>
+    <script src="voice.js?v=11"></script>
+    <script src="app.js?v=11"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>
