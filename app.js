@@ -683,10 +683,22 @@ const App = (() => {
             el.appendChild(card);
         });
     }
-    function openCustomerModal(existing) {
+    async function openCustomerModal(existing) {
         const isEdit = !!existing;
+
+        // Fetch suggestions from synced phone contacts for new customers
+        let datalistHTML = '';
+        if (!isEdit) {
+            const rawContacts = await TallyStore.getPhoneContacts();
+            datalistHTML = rawContacts.map(c => `<option value="${c.name}">`).join('');
+        }
+
         openModal(isEdit ? 'Edit Customer' : 'Add Customer',
-            `<div class="form-group"><label>Name</label><input id="f_cname" value="${isEdit ? existing.name : ''}"></div>
+            `${!isEdit ? `<datalist id="newCustomerNamesList">${datalistHTML}</datalist>` : ''}
+            <div class="form-group">
+                <label>Name</label>
+                <input id="f_cname" list="newCustomerNamesList" autocomplete="off" value="${isEdit ? existing.name : ''}">
+            </div>
             <div class="form-row"><div class="form-group"><label>Phone</label><input id="f_cphone" value="${isEdit ? existing.phone : ''}"></div>
             <div class="form-group"><label>Due Amount (৳)</label><input id="f_cdue" type="number" value="${isEdit ? (existing.due || 0) : '0'}"></div></div>
             <div class="form-group"><label>Address</label><input id="f_caddr" value="${isEdit ? existing.address : ''}"></div>

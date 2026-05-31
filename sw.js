@@ -3,7 +3,7 @@
    Caches app files for offline use.
    ============================================================ */
 
-const CACHE_NAME = 'tally-v25';
+const CACHE_NAME = 'tally-v26';
 
 // Files to cache for offline use (Firebase data still syncs when online)
 const STATIC_FILES = [
