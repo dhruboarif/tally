@@ -237,6 +237,18 @@ const TallyStore = (() => {
         }
     }
 
+    async function savePhoneContacts(contactsArray) {
+        await db.collection('settings').doc('phone_contacts').set({ list: contactsArray });
+    }
+
+    async function getPhoneContacts() {
+        try {
+            const doc = await db.collection('settings').doc('phone_contacts').get();
+            if (doc.exists) return doc.data().list || [];
+        } catch (err) { }
+        return [];
+    }
+
     return {
         init, generateId,
         // Customers
@@ -249,6 +261,8 @@ const TallyStore = (() => {
         getInventory, addProduct, updateProduct, deleteProduct,
         // Voice
         addVoiceLog, getVoiceLogs,
+        // Contacts
+        savePhoneContacts, getPhoneContacts,
         // Summaries
         getDashboardSummary, getLast7DaysCashFlow,
         // Demo & Backup

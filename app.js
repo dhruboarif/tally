@@ -863,8 +863,12 @@ const App = (() => {
         const today = new Date();
         const dateStr = lang === 'bn' ? today.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long' }) : today.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 
-        const customers = await TallyStore.getCustomers();
-        const datalistHTML = Object.values(customers).map(c => `<option value="${c.name}">`).join('');
+        const [customers, rawContacts] = await Promise.all([TallyStore.getCustomers(), TallyStore.getPhoneContacts()]);
+
+        const allNames = new Set(Object.values(customers).map(c => c.name));
+        rawContacts.forEach(c => allNames.add(c.name));
+
+        const datalistHTML = Array.from(allNames).map(name => `<option value="${name}">`).join('');
 
         const bodyHTML = `
             <datalist id="customerNamesList">${datalistHTML}</datalist>
@@ -1211,27 +1215,31 @@ const App = (() => {
 
             if (!contacts || contacts.length === 0) return;
 
-            toast(lang === 'bn' ? 'কন্টাক্ট সেভ করা হচ্ছে...' : 'Saving contacts...', 'info');
+            toast(lang === 'bn' ? 'কন্টাক্ট সিঙ্ক করা হচ্ছে...' : 'Syncing contacts...', 'info');
+
+            // Get existing raw contacts
+            const existingRaw = await TallyStore.getPhoneContacts();
+            const existingMap = new Set(existingRaw.map(c => c.name));
+
             let added = 0;
+            const newContacts = [];
 
             for (const c of contacts) {
                 const name = c.name && c.name.length ? c.name[0] : 'Unknown';
                 const phone = c.tel && c.tel.length ? c.tel[0] : '';
 
-                if (name && name !== 'Unknown') {
-                    await TallyStore.addCustomer({
-                        name: name,
-                        phone: phone,
-                        address: '',
-                        openingBalance: 0
-                    });
+                if (name && name !== 'Unknown' && !existingMap.has(name)) {
+                    newContacts.push({ name, phone });
+                    existingMap.add(name);
                     added++;
                 }
             }
 
-            toast(lang === 'bn' ? `${added} জন সেভ হয়েছে!` : `${added} contacts saved!`, 'success');
-            if (currentPage === 'customers') refreshCustomers();
-            if (currentPage === 'dashboard') refreshDashboard();
+            if (added > 0) {
+                await TallyStore.savePhoneContacts([...existingRaw, ...newContacts]);
+            }
+
+            toast(lang === 'bn' ? `${added} নতুন কন্টাক্ট ডেটাবেসে সিঙ্ক হয়েছে!` : `${added} contacts synced to database!`, 'success');
 
         } catch (err) {
             console.error('Contact Pick Error:', err);
